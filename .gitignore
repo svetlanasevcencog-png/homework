@@ -6,3 +6,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Cypress
+/cypress/screenshots/
+/cypress/videos/
+/cypress/downloads/

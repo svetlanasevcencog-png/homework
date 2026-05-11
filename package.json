@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/svetlanasevcencog-png/homework.git"
