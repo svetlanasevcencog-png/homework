@@ -11,3 +11,13 @@ node_modules/
 /cypress/screenshots/
 /cypress/videos/
 /cypress/downloads/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Local tooling artifacts
+.cursor/
+.playwright-mcp/
+test-results/
