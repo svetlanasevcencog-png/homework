@@ -1,8 +1,26 @@
-# Test plan: Program list filtering and display
+# Test Plan – DS-5: Program List Filtering and Display
 
+**Jira:** [DS-5 – Program list filtering and display](https://legionqaschool.atlassian.net/browse/DS-5)  
 **Feature:** Program list filtering and display  
 **Primary UI:** **Programs** page — list view with **Program name** and **Description** per row  
-**Note:** Acceptance criteria define **display** and **empty state**; **filtering** is named in the feature title but not specified in ACs — covered in edge cases and gaps where applicable.
+**Note:** Acceptance criteria define **display** and **empty state**; **filtering** is named in the feature title but not specified in Jira ACs — covered in edge cases and gaps where applicable.
+
+**Source ACs (Jira):**
+
+```gherkin
+Scenario: Display program list with key details
+  Given programs exist in the system
+  When I navigate to the Programs page
+  Then I see a list showing each program's name and description
+
+Scenario: Empty state when no programs exist
+  Given no programs exist
+  When I navigate to the Programs page
+  Then I see a message indicating no programs have been created
+  And I see a prompt to create the first program
+```
+
+**Coverage status:** Both Jira AC scenarios are covered by this test plan (2/2). Search/filter behavior (TC-017, TC-018) extends beyond the ACs and is marked N/A if not implemented.
 
 ---
 
@@ -200,11 +218,13 @@
 
 ## Traceability (AC coverage)
 
-| Acceptance scenario | Test case IDs |
-|---------------------|---------------|
-| List shows each program’s **name** and **description** | TC-001, TC-003, TC-004, TC-008 |
-| Empty state: no programs message + create-first prompt | TC-002 |
-| Empty state must not appear when data exists | TC-006 |
+| Jira scenario | Test case IDs | Gap |
+| --- | --- | --- |
+| List shows each program’s **name** and **description** | TC-001, TC-003, TC-004, TC-008 | None |
+| Empty state: no programs message + create-first prompt | TC-002 | None |
+| Empty state must not appear when data exists | TC-006 | Extension (not in AC) |
+
+**Overall DS-5 ↔ Jira coverage:** Complete for all stated acceptance criteria.
 
 ---
 
@@ -231,5 +251,3 @@
 10. **Real-time updates** — If another user creates a program, whether list auto-refreshes is not specified.
 
 ---
-
-*Prepared as QA output for the prompt stored in `program-list-filtering-display-test-plan-prompt.md`.*

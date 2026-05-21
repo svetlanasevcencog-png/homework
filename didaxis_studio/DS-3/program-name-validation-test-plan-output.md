@@ -1,8 +1,33 @@
-# Test plan: Program name validation and duplicate prevention
+# Test Plan – DS-3: Program Name Validation and Duplicate Prevention
 
+**Jira:** [DS-3 – Program name validation and duplicate prevention](https://legionqaschool.atlassian.net/browse/DS-3)  
 **Feature:** Program name validation and duplicate prevention  
 **Context:** Program **creation** form (primary); duplicate rule references existing program **Web Development 2026**  
 **Primary field under test:** **Program name** (other required fields filled per scenario)
+
+**Source ACs (Jira):**
+
+```gherkin
+Scenario: Reject program name with only whitespace
+  Given I am on the program creation form
+  When I enter "   " as the program name
+  And I click Create
+  Then the form is not submitted (name is trimmed, treated as empty)
+
+Scenario: Accept program name with special characters
+  Given I am on the program creation form
+  When I enter "Informatique & IA - Niveau 2" as the program name
+  And I fill other required fields
+  And I click Create
+  Then the program is created successfully
+
+Scenario: Reject duplicate program name
+  Given a program "Web Development 2026" already exists
+  When I try to create a new program with the same name
+  Then I see an error indicating the name already exists
+```
+
+**Coverage status:** All three Jira AC scenarios are covered by this test plan (3/3). TC-006 (fully empty name) and other cases extend coverage beyond the ACs.
 
 ---
 
@@ -226,11 +251,13 @@
 
 ## Traceability (AC coverage)
 
-| Acceptance scenario | Test case IDs |
-|---------------------|---------------|
-| Reject whitespace-only name (trim → empty, not submitted) | TC-004, TC-015, TC-016 |
-| Accept name with special characters (`Informatique & IA - Niveau 2`) | TC-001, TC-019 |
-| Reject duplicate (`Web Development 2026`) | TC-005, TC-007, TC-009, TC-015 |
+| Jira scenario | Test case IDs | Gap |
+| --- | --- | --- |
+| Reject whitespace-only name (trim → empty, not submitted) | TC-004, TC-015, TC-016 | None |
+| Accept name with special characters (`Informatique & IA - Niveau 2`) | TC-001, TC-019 | None |
+| Reject duplicate (`Web Development 2026`) | TC-005, TC-007, TC-009, TC-015 | None |
+
+**Overall DS-3 ↔ Jira coverage:** Complete for all stated acceptance criteria.
 
 ---
 
@@ -255,5 +282,3 @@
 9. **Special characters** — Only one positive example; policy on emoji, RTL text, or disallowed symbols is not defined.
 
 ---
-
-*Prepared as QA output for the prompt stored in `program-name-validation-test-plan-prompt.md`.*

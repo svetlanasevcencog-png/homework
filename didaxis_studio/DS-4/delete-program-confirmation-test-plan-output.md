@@ -1,8 +1,28 @@
-# Test plan: Delete program with confirmation
+# Test Plan – DS-4: Delete Program with Confirmation
 
+**Jira:** [DS-4 – Delete program with confirmation](https://legionqaschool.atlassian.net/browse/DS-4)  
 **Feature:** Delete program with confirmation  
 **Context:** Programs list with per-row **delete** icon; confirmation **dialog** before permanent removal  
 **Sample program from ACs:** **Test Program**
+
+**Source ACs (Jira):**
+
+```gherkin
+Scenario: Delete program with confirmation
+  Given a program "Test Program" exists
+  When I click the delete icon for "Test Program"
+  Then I see a confirmation dialog
+  When I confirm deletion
+  Then "Test Program" is removed from the program list
+
+Scenario: Cancel program deletion
+  Given I click the delete icon for a program
+  When I see the confirmation dialog
+  And I click Cancel
+  Then the program still exists in the list
+```
+
+**Coverage status:** Both Jira AC scenarios are covered by this test plan (2/2). TC-004 uses **Test Program** explicitly for the cancel path; TC-003 covers cancel with a named alternate program.
 
 ---
 
@@ -206,10 +226,12 @@
 
 ## Traceability (AC coverage)
 
-| Acceptance scenario | Test case IDs |
-|---------------------|---------------|
-| Delete with confirmation → dialog → confirm → removed from list | TC-001, TC-002, TC-010 |
-| Cancel deletion → program still in list | TC-003, TC-004, TC-005 |
+| Jira scenario | Test case IDs | Gap |
+| --- | --- | --- |
+| Delete with confirmation → dialog → confirm → removed from list | TC-001, TC-002, TC-010 | None |
+| Cancel deletion → program still in list | TC-003, TC-004, TC-005 | None |
+
+**Overall DS-4 ↔ Jira coverage:** Complete for all stated acceptance criteria.
 
 ---
 
@@ -236,5 +258,3 @@
 10. **Undo** — No mention of recovery window; if product adds undo later, confirmation copy may need to change.
 
 ---
-
-*Prepared as QA output for the prompt stored in `delete-program-confirmation-test-plan-prompt.md`.*

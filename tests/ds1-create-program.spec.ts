@@ -318,11 +318,11 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(programInList(page, name)).toBeVisible();
     });
 
-    // KNOWN BUG – see block2/bugs/BUG-001-create-program-double-submit.md
+    // KNOWN BUG – Jira SS-26 (Create double-click submits twice)
     // A rapid double-click on the Create button submits the form twice and creates two
     // identical programs because the button is not disabled while the create request is
     // in flight. The test below describes the desired behavior; remove the `fixme`
-    // marker once BUG-001 is fixed.
+    // marker once SS-26 is fixed.
     test.fixme(
       'TC-E-009 Rapid double-click on Create does not create two programs',
       async ({ page }) => {

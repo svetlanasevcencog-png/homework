@@ -1,8 +1,34 @@
 # Test Plan – DS-1: Create New Academic Program
 
-**Feature:** Create new academic program
-**Author:** Senior QA Engineer
+**Jira:** [DS-1 – Create new academic program](https://legionqaschool.atlassian.net/browse/DS-1)  
+**Feature:** Create new academic program  
+**Author:** Senior QA Engineer  
 **Scope:** Functional verification of the "Create new academic program" feature against the provided Acceptance Criteria (AC-1, AC-2, AC-3), plus negative and edge coverage.
+
+**Source ACs (Jira):**
+
+```gherkin
+Scenario: Navigate to program creation form
+  Given I am logged in as admin
+  When I navigate to the Programs page
+  And I click "+ New Program"
+  Then I see the program creation form with fields: Program Name, Description
+
+Scenario: Successfully create a program
+  Given I am on the program creation form
+  When I fill in Program Name with "Web Development 2026"
+  And I fill in Description with "Full-stack web development program"
+  And I click Create
+  Then the modal closes
+  And the program list shows "Web Development 2026"
+
+Scenario: Validation prevents empty program name
+  Given I am on the program creation form
+  When I leave the Program Name field empty
+  Then the Create button is disabled
+```
+
+**Coverage status:** All three Jira AC scenarios are covered by this test plan (3/3). Remaining follow-ups are documented in §8 (backlog) and §9 (automation).
 
 ---
 
@@ -37,7 +63,7 @@ Submission via **Create** closes the modal and appends the new program to the vi
 | --- | --- | --- |
 | AC-1 | Navigate to program creation form | TC-001, TC-002 |
 | AC-2 | Successfully create a program | TC-003, TC-004 |
-| AC-3 | Validation prevents empty program name | TC-N-001, TC-N-002 |
+| AC-3 | Validation prevents empty program name | TC-N-001, TC-N-002, TC-005 |
 
 ---
 
@@ -231,11 +257,27 @@ The ACs are minimal. The points below were not specified by the ACs and were **v
 
 The following were considered but require external information or environment support not currently available. They are kept here as a backlog of follow-ups rather than as broken/skipped tests in the suite:
 
-- **Non-admin access** – needs a non-admin account (`+ New Program` should be hidden/blocked for non-admins).
+- **Non-admin access** – implied by user story ("As an admin user…"); needs a non-admin account (`+ New Program` should be hidden/blocked for non-admins).
+- **Confluence spec alignment** – Jira references *Program Setup & Management > Overview*; not cross-checked in this plan.
 - **Server error response** – needs the documented create-program API endpoint to mock with `page.route` and force a 500 response.
 - **Exceeding the maximum length** – needs the real max length (and the "over-max" behavior: hard cap vs. validation error) confirmed with product.
 - **Duplicate Program Names** – needs a product decision: allowed (and rows remain distinguishable) or forbidden (validation error).
 - **Newlines/tabs inside Program Name** – needs a product decision: strip, reject, or render multi-line.
-- **Idempotent submit** – **known bug**: a rapid double-click on **Create** currently submits twice and creates two identical programs. The button is not disabled while the request is in flight. See [`bugs/BUG-001-create-program-double-submit.md`](bugs/BUG-001-create-program-double-submit.md). The corresponding test (`TC-E-009`) lives in the spec as `test.fixme` and will be enabled once the bug is fixed.
+- **Idempotent submit** – **known bug**: a rapid double-click on **Create** currently submits twice and creates two identical programs. The button is not disabled while the request is in flight. See [SS-26](https://legionqaschool.atlassian.net/browse/SS-26). The corresponding test (`TC-E-009`) lives in the spec as `test.fixme` and will be enabled once the bug is fixed.
 - **Session expiry mid-flow** – needs a way to invalidate the admin session mid-flow (test hook or controlled session backend).
 - **Accessibility** – not in scope here; recommended as a dedicated a11y pass (focus trap, `Esc` to close, ARIA labels on fields, error announcements).
+
+---
+
+## 9. Automation Alignment
+
+Playwright spec: [`tests/ds1-create-program.spec.ts`](../../tests/ds1-create-program.spec.ts)  
+Browser matrix (§2): configured in [`playwright.config.ts`](../../playwright.config.ts).
+
+| Test plan TC | Automated | Notes |
+| --- | --- | --- |
+| TC-001 – TC-006 | Yes | Uses `uniqueName()` instead of literal AC example strings for test isolation |
+| TC-N-001 – TC-N-004 | Yes | |
+| TC-E-001, TC-E-002, TC-E-004, TC-E-006, TC-E-007 | Yes | |
+| TC-E-009 | `test.fixme` | Blocked by [SS-26](https://legionqaschool.atlassian.net/browse/SS-26) |
+| §8 backlog items | No | As documented above |

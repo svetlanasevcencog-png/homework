@@ -1,8 +1,34 @@
-# Test plan: Edit existing program details
+# Test Plan – DS-2: Edit Existing Program Details
 
+**Jira:** [DS-2 – Edit existing program details](https://legionqaschool.atlassian.net/browse/DS-2)  
 **Feature:** Edit existing program details  
 **Form context:** Modal opened from Programs page via row edit icon  
 **Primary fields referenced in ACs:** Name, Description (other program attributes assumed where AC says “other fields”)
+
+**Source ACs (Jira):**
+
+```gherkin
+Scenario: Open program for editing
+  Given I am on the Programs page
+  And a program "Web Development 2026" exists
+  When I click the edit icon on "Web Development 2026"
+  Then I see the edit form pre-populated with the program's current data
+
+Scenario: Successfully edit a program name
+  Given I am editing "Web Development 2026"
+  When I change the Name to "Web Development 2026 - Updated"
+  And I click Save
+  Then the modal closes
+  And the program list immediately shows "Web Development 2026 - Updated"
+
+Scenario: Edit preserves unchanged fields
+  Given I am editing a program
+  When I only change the Description
+  And I click Save
+  Then the Name and other fields remain unchanged
+```
+
+**Coverage status:** All three Jira AC scenarios are covered by this test plan (3/3). Extended negative and edge cases are documented below; ambiguities and backlog items are in the final section.
 
 ---
 
@@ -227,11 +253,13 @@
 
 ## Traceability (AC coverage)
 
-| Acceptance scenario | Test case IDs |
-|---------------------|---------------|
-| Open program for editing (pre-populated form) | TC-001 |
-| Successfully edit program name (modal closes, list updates) | TC-002 |
-| Edit preserves unchanged fields when only Description changes | TC-003 |
+| Jira scenario | Test case IDs | Gap |
+| --- | --- | --- |
+| Open program for editing (pre-populated form) | TC-001 | None |
+| Successfully edit program name (modal closes, list updates) | TC-002 | None |
+| Edit preserves unchanged fields when only Description changes | TC-003 | None |
+
+**Overall DS-2 ↔ Jira coverage:** Complete for all stated acceptance criteria.
 
 ---
 
@@ -259,4 +287,17 @@
 
 ---
 
-*Prepared as QA output for the prompt stored in `edit-program-test-plan-prompt.md`.*
+## Automation alignment
+
+Playwright spec: [`tests/ds2-edit-program.spec.ts`](../../tests/ds2-edit-program.spec.ts)
+
+| Test plan TC | Automated | Notes |
+| --- | --- | --- |
+| TC-001 – TC-005 | Yes | Uses `uniqueName()` for isolation; edit via first row action button (✏️) |
+| TC-007, TC-011 | Yes | |
+| TC-012 – TC-020 | Yes | TC-017 documents [SS-25](https://legionqaschool.atlassian.net/browse/SS-25) (duplicate names allowed) |
+| TC-006, TC-008, TC-009, TC-010 | `test.fixme` | API mock, date fields N/A, non-admin account, conflict simulation |
+
+**Verified UI (test.didaxis.studio):** Edit modal exposes **Program Name**, **Description**, and additional fields (hours, audience, etc.) — not **Start date** / **End date** / **Status** from the written plan examples.
+
+---
