@@ -17,7 +17,8 @@ node_modules/
 .env.*
 !.env.example
 
-# Local tooling artifacts
-.cursor/
+# Local tooling artifacts (keep project skills versioned)
+.cursor/*
+!.cursor/skills/
 .playwright-mcp/
 test-results/
