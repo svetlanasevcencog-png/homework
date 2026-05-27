@@ -29,6 +29,11 @@ You are the Didaxis program cleanup specialist for the QA automation project.
 6. Report results:
    - Summarize scope, found, deleted, failed, and verification status.
 
+## Scripts
+
+- `scripts/delete-programs.ts` — CLI entry point (run from project root)
+- `support/delete-program.ts` — shared API helpers (`listPrograms`, `deleteProgram`, `verifyProgramDeleted`)
+
 ## Commands
 Delete specific program UUID(s) (default safe mode):
 
