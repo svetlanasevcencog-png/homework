@@ -1,20 +1,23 @@
-import { test as base, expect, Page, Locator } from '@playwright/test';
+import { test as base, expect } from '../fixtures/cleanup.fixture';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
-const LOGIN_URL = 'https://test.didaxis.studio/login';
-const PROGRAMS_URL = 'https://test.didaxis.studio/programs';
+const DIDAXIS_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
+const LOGIN_URL = `${DIDAXIS_URL}/login`;
+const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
 
 const EMAIL = process.env.DIDAXIS_EMAIL;
 const PASSWORD = process.env.DIDAXIS_PASSWORD;
+const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
 
-if (!EMAIL || !PASSWORD) {
+if (!EMAIL || !PASSWORD || !API_TOKEN) {
   throw new Error(
-    'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be defined in .env to run DS-4 tests.',
+    'DIDAXIS_EMAIL, DIDAXIS_PASSWORD, and DIDAXIS_API_TOKEN must be defined in .env to run DS-4 tests.',
   );
 }
 
@@ -87,6 +90,8 @@ async function gotoPrograms(page: Page): Promise<void> {
 
 async function createProgram(
   page: Page,
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
   name: string,
   description = 'Program for delete tests',
 ): Promise<void> {
@@ -94,12 +99,28 @@ async function createProgram(
   await newProgramButton(page).click();
   await programNameInput(page).fill(name);
   await descriptionInput(page).fill(description);
-  await page.getByRole('button', { name: 'Create' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(programNameInput(page)).toBeHidden({ timeout: 15_000 });
   await gotoPrograms(page);
   const row = programRow(page, name);
   await row.scrollIntoViewIfNeeded();
   await expect(row).toBeVisible();
+  await trackProgramByName(request, trackProgram, name);
+}
+
+async function trackProgramByName(
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
+  name: string,
+): Promise<void> {
+  const response = await request.get(`${DIDAXIS_URL}/api/programs`, {
+    headers: { Authorization: `Bearer ${API_TOKEN}` },
+  });
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as { data?: Array<{ id: string; name: string }> };
+  const created = body.data?.find((program) => program.name === name);
+  expect(created, `Expected "${name}" in API program list.`).toBeTruthy();
+  trackProgram(created!.id);
 }
 
 async function clickDeleteWithDialog(
@@ -135,10 +156,14 @@ async function clickDeleteWithDialog(
 test.describe('DS-4 Delete program with confirmation', () => {
   test.setTimeout(60_000);
   test.describe('Positive flows', () => {
-    test('TC-001 Confirmation dialog appears when initiating delete', async ({ page }) => {
+    test('TC-001 Confirmation dialog appears when initiating delete', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Test Program');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
       const message = await clickDeleteWithDialog(page, row, 'dismiss');
 
@@ -150,10 +175,12 @@ test.describe('DS-4 Delete program with confirmation', () => {
 
     test('TC-002 Program is removed from the list after user confirms deletion', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Test Program');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'accept');
@@ -161,10 +188,14 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programInList(page, name)).toHaveCount(0);
     });
 
-    test('TC-003 Program remains in the list when user cancels deletion', async ({ page }) => {
+    test('TC-003 Program remains in the list when user cancels deletion', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'dismiss');
@@ -174,10 +205,12 @@ test.describe('DS-4 Delete program with confirmation', () => {
 
     test('TC-004 Cancel preserves Test Program when that is the program under delete', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Test Program');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'dismiss');
@@ -189,10 +222,12 @@ test.describe('DS-4 Delete program with confirmation', () => {
   test.describe('Negative flows', () => {
     test('TC-005 Program must not be deleted if confirmation is never completed', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Data Science 2026');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'dismiss');
@@ -202,12 +237,14 @@ test.describe('DS-4 Delete program with confirmation', () => {
 
     test('TC-010 Deleting one program must not remove a different program', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const toDelete = uniqueName('Test Program');
       const toKeep = uniqueName('Web Development 2026');
 
-      await createProgram(page, toDelete);
-      await createProgram(page, toKeep);
+      await createProgram(page, request, trackProgram, toDelete);
+      await createProgram(page, request, trackProgram, toKeep);
 
       const row = programRow(page, toDelete);
       await clickDeleteWithDialog(page, row, 'accept');
@@ -216,10 +253,14 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programInList(page, toKeep)).toBeVisible();
     });
 
-    test('TC-008 Double confirmation click performs a single delete', async ({ page }) => {
+    test('TC-008 Double confirmation click performs a single delete', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Test Program Double Confirm');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'accept');
@@ -252,20 +293,26 @@ test.describe('DS-4 Delete program with confirmation', () => {
   test.describe('Edge cases', () => {
     test('TC-011 Confirmation copy displays correctly for program name with special characters', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `Informatique & IA - Niveau 2 ${Date.now()}`;
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
       const message = await clickDeleteWithDialog(page, row, 'dismiss');
 
       expect(message).toContain('Informatique & IA - Niveau 2');
     });
 
-    test('TC-017 Program name containing quotes renders safely in dialog', async ({ page }) => {
+    test('TC-017 Program name containing quotes renders safely in dialog', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
       const previewMessage = await clickDeleteWithDialog(page, row, 'dismiss');
 
@@ -277,10 +324,12 @@ test.describe('DS-4 Delete program with confirmation', () => {
 
     test('TC-013 Dismiss on confirmation dialog keeps program in the list', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Test Program');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'dismiss');
@@ -290,10 +339,12 @@ test.describe('DS-4 Delete program with confirmation', () => {
 
     test('TC-020 Cancel does not leave delete control stuck; delete can be reopened', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Data Science Bootcamp 2026');
 
-      await createProgram(page, name);
+      await createProgram(page, request, trackProgram, name);
       const row = programRow(page, name);
 
       await clickDeleteWithDialog(page, row, 'dismiss');

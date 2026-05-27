@@ -1,20 +1,23 @@
-import { test as base, expect, Page, Locator } from '@playwright/test';
+import { test as base, expect } from '../fixtures/cleanup.fixture';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
-const LOGIN_URL = 'https://test.didaxis.studio/login';
-const PROGRAMS_URL = 'https://test.didaxis.studio/programs';
+const DIDAXIS_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
+const LOGIN_URL = `${DIDAXIS_URL}/login`;
+const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
 
 const EMAIL = process.env.DIDAXIS_EMAIL;
 const PASSWORD = process.env.DIDAXIS_PASSWORD;
+const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
 
-if (!EMAIL || !PASSWORD) {
+if (!EMAIL || !PASSWORD || !API_TOKEN) {
   throw new Error(
-    'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be defined in .env to run DS-1 tests.',
+    'DIDAXIS_EMAIL, DIDAXIS_PASSWORD, and DIDAXIS_API_TOKEN must be defined in .env to run DS-1 tests.',
   );
 }
 
@@ -74,7 +77,7 @@ function descriptionInput(page: Page): Locator {
 }
 
 function createButton(page: Page): Locator {
-  return page.getByRole('button', { name: 'Create' });
+  return page.getByRole('button', { name: 'Create', exact: true });
 }
 
 function newProgramButton(page: Page): Locator {
@@ -86,6 +89,26 @@ function newProgramButton(page: Page): Locator {
 
 function programInList(page: Page, name: string): Locator {
   return page.getByText(name, { exact: true });
+}
+
+type TrackProgramFn = (id: string) => void;
+
+async function trackProgramByName(
+  request: APIRequestContext,
+  trackProgram: TrackProgramFn,
+  name: string,
+): Promise<void> {
+  const response = await request.get(`${DIDAXIS_URL}/api/programs`, {
+    headers: {
+      Authorization: `Bearer ${API_TOKEN}`,
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+
+  const body = (await response.json()) as { data?: Array<{ id: string; name: string }> };
+  const created = body.data?.find((program) => program.name === name);
+  expect(created, `Expected "${name}" to exist in API program list.`).toBeTruthy();
+  trackProgram(created!.id);
 }
 
 test.describe('DS-1 Create new academic program', () => {
@@ -124,7 +147,11 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(nameField).toBeFocused();
     });
 
-    test('TC-003 Admin can create a program with both Name and Description', async ({ page }) => {
+    test('TC-003 Admin can create a program with both Name and Description', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development');
       const description = 'Full-stack web development program';
 
@@ -135,9 +162,14 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-004 Newly created program persists across reload', async ({ page }) => {
+    test('TC-004 Newly created program persists across reload', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Persisted Program');
 
       await openProgramForm(page);
@@ -148,6 +180,7 @@ test.describe('DS-1 Create new academic program', () => {
       await page.reload();
 
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
 
     test('TC-005 Create button becomes enabled as soon as Program Name has content', async ({
@@ -161,7 +194,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(createButton(page)).toBeEnabled();
     });
 
-    test('TC-006 Description is optional', async ({ page }) => {
+    test('TC-006 Description is optional', async ({ page, request, trackProgram }) => {
       const name = uniqueName('Data Science');
 
       await openProgramForm(page);
@@ -170,6 +203,7 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
   });
 
@@ -234,7 +268,11 @@ test.describe('DS-1 Create new academic program', () => {
   /* Edge cases                                                      */
   /* -------------------------------------------------------------- */
   test.describe('Edge cases', () => {
-    test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', async ({ page }) => {
+    test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       // Note: Playwright's getByText with `exact: true` normalizes leading/trailing
       // whitespace, so asserting the padded form is "not found" is meaningless. We
       // assert that the trimmed name appears in the list, which is what was verified
@@ -248,9 +286,14 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, trimmed)).toBeVisible();
+      await trackProgramByName(request, trackProgram, trimmed);
     });
 
-    test('TC-E-002 255-character Program Name is accepted', async ({ page }) => {
+    test('TC-E-002 255-character Program Name is accepted', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const suffix = ` ${Date.now()}`;
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).toHaveLength(255);
@@ -261,9 +304,14 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-E-004 Long Description (2000 characters) is accepted', async ({ page }) => {
+    test('TC-E-004 Long Description (2000 characters) is accepted', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Long Description Program');
       const description = 'd'.repeat(2000);
 
@@ -274,10 +322,13 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
 
     test('TC-E-006 Special characters, emojis, and non-Latin scripts are accepted verbatim', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const xssName = `<script>alert(1)</script> ${Date.now()}`;
       const i18nName = `任务一 / مهمة / задача ${Date.now()}`;
@@ -294,6 +345,7 @@ test.describe('DS-1 Create new academic program', () => {
       await createButton(page).click();
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, xssName)).toBeVisible();
+      await trackProgramByName(request, trackProgram, xssName);
 
       await newProgramButton(page).click();
       await programNameInput(page).fill(i18nName);
@@ -301,11 +353,16 @@ test.describe('DS-1 Create new academic program', () => {
       await createButton(page).click();
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, i18nName)).toBeVisible();
+      await trackProgramByName(request, trackProgram, i18nName);
 
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-E-007 Short Program Name (single-letter prefix) is accepted', async ({ page }) => {
+    test('TC-E-007 Short Program Name (single-letter prefix) is accepted', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       // Single literal characters are not isolation-safe (duplicates behavior is undefined),
       // so we exercise the lower boundary with a single-letter prefix plus a unique suffix.
       const name = `A${Date.now()}`;
@@ -316,6 +373,7 @@ test.describe('DS-1 Create new academic program', () => {
 
       await expect(programNameInput(page)).toBeHidden();
       await expect(programInList(page, name)).toBeVisible();
+      await trackProgramByName(request, trackProgram, name);
     });
 
     // KNOWN BUG – Jira SS-26 (Create double-click submits twice)

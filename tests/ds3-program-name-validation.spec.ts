@@ -1,20 +1,23 @@
-import { test as base, expect, Page, Locator } from '@playwright/test';
+import { test as base, expect } from '../fixtures/cleanup.fixture';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
-const LOGIN_URL = 'https://test.didaxis.studio/login';
-const PROGRAMS_URL = 'https://test.didaxis.studio/programs';
+const DIDAXIS_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
+const LOGIN_URL = `${DIDAXIS_URL}/login`;
+const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
 
 const EMAIL = process.env.DIDAXIS_EMAIL;
 const PASSWORD = process.env.DIDAXIS_PASSWORD;
+const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
 
-if (!EMAIL || !PASSWORD) {
+if (!EMAIL || !PASSWORD || !API_TOKEN) {
   throw new Error(
-    'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be defined in .env to run DS-3 tests.',
+    'DIDAXIS_EMAIL, DIDAXIS_PASSWORD, and DIDAXIS_API_TOKEN must be defined in .env to run DS-3 tests.',
   );
 }
 
@@ -65,7 +68,7 @@ function descriptionInput(page: Page): Locator {
 }
 
 function createButton(page: Page): Locator {
-  return page.getByRole('button', { name: 'Create' });
+  return page.getByRole('button', { name: 'Create', exact: true });
 }
 
 function newProgramButton(page: Page): Locator {
@@ -82,41 +85,68 @@ async function openProgramForm(page: Page): Promise<void> {
   await expect(programNameInput(page)).toBeVisible();
 }
 
-async function submitCreate(page: Page): Promise<void> {
+async function submitCreate(
+  page: Page,
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
+  name: string,
+): Promise<void> {
   await createButton(page).click();
   await expect(programNameInput(page)).toBeHidden({ timeout: 15_000 });
+  await trackProgramByName(request, trackProgram, name);
+}
+
+async function trackProgramByName(
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
+  name: string,
+): Promise<void> {
+  const response = await request.get(`${DIDAXIS_URL}/api/programs`, {
+    headers: { Authorization: `Bearer ${API_TOKEN}` },
+  });
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as { data?: Array<{ id: string; name: string }> };
+  const created = body.data?.find((program) => program.name === name);
+  expect(created, `Expected "${name}" in API program list.`).toBeTruthy();
+  trackProgram(created!.id);
 }
 
 test.describe('DS-3 Program name validation and duplicate prevention', () => {
   test.describe('Positive flows', () => {
     test('TC-001 Program with special characters in name is created successfully', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `Informatique & IA - Niveau 2 ${Date.now()}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
       await descriptionInput(page).fill('Cycle secondaire — orientation sciences');
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
     test('TC-002 Valid unique name with letters, numbers, and spaces is accepted', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Data Science Bootcamp 2026');
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
       await descriptionInput(page).fill('Python, ML, and data engineering track');
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
     test('TC-003 Name at maximum allowed length (255) is accepted when unique', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const suffix = ` ${Date.now()}`;
       const name = 'A'.repeat(255 - suffix.length) + suffix;
@@ -124,7 +154,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
@@ -148,49 +178,59 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
     });
 
     // KNOWN BUG – Jira SS-25 (duplicate program names allowed on create)
-    test('TC-005 Duplicate name is allowed (no blocking error)', async ({ page }) => {
+    test('TC-005 Duplicate name is allowed (no blocking error)', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026');
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
       await descriptionInput(page).fill('Second cohort');
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toHaveCount(2);
     });
 
-    test('TC-009 Padded duplicate name is allowed after trim (SS-25)', async ({ page }) => {
+    test('TC-009 Padded duplicate name is allowed after trim (SS-25)', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026 Padded');
       const padded = `  ${name}  `;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await openProgramForm(page);
       await programNameInput(page).fill(padded);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toHaveCount(2);
     });
 
     test('TC-008 Case-variant duplicate is allowed (case-sensitive uniqueness)', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const baseName = uniqueName('Web Development 2026');
       const variant = baseName.replace('Web', 'web');
 
       await openProgramForm(page);
       await programNameInput(page).fill(baseName);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, baseName);
 
       await openProgramForm(page);
       await programNameInput(page).fill(variant);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, variant);
 
       await expect(programInList(page, baseName)).toBeVisible();
       await expect(programInList(page, variant)).toBeVisible();
@@ -233,28 +273,32 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
 
     test('TC-012 Unicode and accented characters in name are accepted when unique', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `École d'été — Zürich 2026 ${Date.now()}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
-    test('TC-013 Emoji in program name is accepted', async ({ page }) => {
+    test('TC-013 Emoji in program name is accepted', async ({ page, request, trackProgram }) => {
       const name = `Web Dev 2026 🚀 ${Date.now()}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
     test('TC-014 HTML-like strings in name are stored as text, not executed', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `<script>alert(1)</script> Program ${Date.now()}`;
       let dialogTriggered = false;
@@ -265,65 +309,79 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-015 Duplicate check after trim allows duplicate (SS-25)', async ({ page }) => {
+    test('TC-015 Duplicate check after trim allows duplicate (SS-25)', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026 Trim Dup');
       const padded = `   ${name}   `;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await openProgramForm(page);
       await programNameInput(page).fill(padded);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toHaveCount(2);
     });
 
     test('TC-016 Tab and newline in name are trimmed to a valid unique name', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Valid Name 2026');
       const messy = `\t\n  ${name}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(messy);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
     test('TC-017 Single visible character name is accepted with unique suffix', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `A${Date.now()}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
-    test('TC-019 Special-character acceptance beyond AC example', async ({ page }) => {
+    test('TC-019 Special-character acceptance beyond AC example', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
 
       await openProgramForm(page);
       await programNameInput(page).fill(name);
       await descriptionInput(page).fill(`O'Brien & "Co."`);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, name);
 
       await expect(programInList(page, name)).toBeVisible();
     });
 
     test('TC-020 Dismissing the form retains field values for a corrected retry', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const duplicate = uniqueName('Web Development 2026');
       const unique = `${duplicate} - New`;
@@ -338,7 +396,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await newProgramButton(page).click();
       await programNameInput(page).fill(unique);
       await expect(descriptionInput(page)).toHaveValue(description);
-      await submitCreate(page);
+      await submitCreate(page, request, trackProgram, unique);
 
       await expect(programInList(page, unique)).toBeVisible();
     });

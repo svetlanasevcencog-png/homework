@@ -1,20 +1,23 @@
-import { test as base, expect, Page, Locator } from '@playwright/test';
+import { test as base, expect } from '../fixtures/cleanup.fixture';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
-const LOGIN_URL = 'https://test.didaxis.studio/login';
-const PROGRAMS_URL = 'https://test.didaxis.studio/programs';
+const DIDAXIS_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
+const LOGIN_URL = `${DIDAXIS_URL}/login`;
+const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
 
 const EMAIL = process.env.DIDAXIS_EMAIL;
 const PASSWORD = process.env.DIDAXIS_PASSWORD;
+const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
 
-if (!EMAIL || !PASSWORD) {
+if (!EMAIL || !PASSWORD || !API_TOKEN) {
   throw new Error(
-    'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be defined in .env to run DS-5 tests.',
+    'DIDAXIS_EMAIL, DIDAXIS_PASSWORD, and DIDAXIS_API_TOKEN must be defined in .env to run DS-5 tests.',
   );
 }
 
@@ -87,6 +90,8 @@ async function gotoPrograms(page: Page): Promise<void> {
 
 async function createProgram(
   page: Page,
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
   name: string,
   description: string,
 ): Promise<void> {
@@ -94,13 +99,33 @@ async function createProgram(
   await newProgramButton(page).click();
   await programNameInput(page).fill(name);
   await descriptionInput(page).fill(description);
-  await page.getByRole('button', { name: 'Create' }).click();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
   await expect(programNameInput(page)).toBeHidden({ timeout: 15_000 });
+  await trackProgramByName(request, trackProgram, name);
+}
+
+async function trackProgramByName(
+  request: APIRequestContext,
+  trackProgram: (id: string) => void,
+  name: string,
+): Promise<void> {
+  const response = await request.get(`${DIDAXIS_URL}/api/programs`, {
+    headers: { Authorization: `Bearer ${API_TOKEN}` },
+  });
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as { data?: Array<{ id: string; name: string }> };
+  const created = body.data?.find((program) => program.name === name);
+  expect(created, `Expected "${name}" in API program list.`).toBeTruthy();
+  trackProgram(created!.id);
 }
 
 test.describe('DS-5 Program list filtering and display', () => {
   test.describe('Positive flows', () => {
-    test('TC-001 Each program row shows Program name and Description', async ({ page }) => {
+    test('TC-001 Each program row shows Program name and Description', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const web = uniqueName('Web Development 2026');
       const data = uniqueName('Data Science 2026');
       const info = uniqueName('Informatique & IA - Niveau 2');
@@ -112,7 +137,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       ];
 
       for (const p of programs) {
-        await createProgram(page, p.name, p.description);
+        await createProgram(page, request, trackProgram, p.name, p.description);
       }
 
       await gotoPrograms(page);
@@ -128,11 +153,13 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-003 List remains correct after refresh when programs exist', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Refresh Persist 2026');
       const description = 'Should survive browser refresh';
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
       await expect(programDataCell(programRow(page, name))).toContainText(description);
 
@@ -146,11 +173,13 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-004 Single program displays name and description without empty-state copy', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Test Program');
       const description = 'Smoke test program for list UI';
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -164,10 +193,14 @@ test.describe('DS-5 Program list filtering and display', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-006 Empty state must not appear when programs exist', async ({ page }) => {
+    test('TC-006 Empty state must not appear when programs exist', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026');
 
-      await createProgram(page, name, 'Existing program row');
+      await createProgram(page, request, trackProgram, name, 'Existing program row');
       await gotoPrograms(page);
 
       await expect(programRow(page, name)).toBeVisible();
@@ -177,12 +210,16 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(newProgramButton(page)).toBeVisible();
     });
 
-    test('TC-008 List must not swap name and description in the row', async ({ page }) => {
+    test('TC-008 List must not swap name and description in the row', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('DS-2026');
       const description =
         'This is intentionally longer text for column alignment testing in the programs list.';
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -223,11 +260,15 @@ test.describe('DS-5 Program list filtering and display', () => {
   });
 
   test.describe('Edge cases', () => {
-    test('TC-010 Very long Description displays without breaking the row', async ({ page }) => {
+    test('TC-010 Very long Description displays without breaking the row', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = uniqueName('Web Development 2026');
       const description = 'd'.repeat(500);
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -235,12 +276,16 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(programDataCell(row)).toContainText(description.slice(0, 80));
     });
 
-    test('TC-011 Very long Program name displays in the list row', async ({ page }) => {
+    test('TC-011 Very long Program name displays in the list row', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const suffix = ` ${Date.now()}`;
       const name = 'P'.repeat(255 - suffix.length) + suffix;
       const description = 'Boundary name length row';
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       await expect(programInList(page, name)).toBeVisible();
@@ -249,6 +294,8 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-012 Special characters and HTML-like text render safely in list', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
       const description = 'Learn <HTML> & "quotes" — 50% practice.';
@@ -258,7 +305,7 @@ test.describe('DS-5 Program list filtering and display', () => {
         await d.dismiss();
       });
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -267,11 +314,15 @@ test.describe('DS-5 Program list filtering and display', () => {
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-013 Unicode and accented text display correctly', async ({ page }) => {
+    test('TC-013 Unicode and accented text display correctly', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
       const name = `École d'été — Zürich ${Date.now()}`;
       const description = '日本語サマー — cohort mixte.';
 
-      await createProgram(page, name, description);
+      await createProgram(page, request, trackProgram, name, description);
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -281,10 +332,12 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-014 Empty Description shows name with blank or minimal description area', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Minimal Program 2026');
 
-      await createProgram(page, name, '');
+      await createProgram(page, request, trackProgram, name, '');
       await gotoPrograms(page);
 
       const row = programRow(page, name);
@@ -295,11 +348,13 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-015 Duplicate program names show two distinguishable rows (SS-25)', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const name = uniqueName('Test Program');
 
-      await createProgram(page, name, 'Cohort A');
-      await createProgram(page, name, 'Cohort B');
+      await createProgram(page, request, trackProgram, name, 'Cohort A');
+      await createProgram(page, request, trackProgram, name, 'Cohort B');
       await gotoPrograms(page);
 
       await expect(programInList(page, name)).toHaveCount(2);
@@ -309,13 +364,15 @@ test.describe('DS-5 Program list filtering and display', () => {
 
     test('TC-020 List shows correct paired name and description for two programs', async ({
       page,
+      request,
+      trackProgram,
     }) => {
       const sharedDescription = 'Shared boilerplate text.';
       const alpha = uniqueName('Alpha Track');
       const beta = uniqueName('Beta Track');
 
-      await createProgram(page, alpha, sharedDescription);
-      await createProgram(page, beta, sharedDescription);
+      await createProgram(page, request, trackProgram, alpha, sharedDescription);
+      await createProgram(page, request, trackProgram, beta, sharedDescription);
       await gotoPrograms(page);
 
       await expect(programDataCell(programRow(page, alpha))).toContainText(alpha);
