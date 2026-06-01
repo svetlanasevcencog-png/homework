@@ -1,62 +1,20 @@
-import { test as base, expect } from '../fixtures/cleanup.fixture';
+import { test, expect } from '../fixtures/cleanup.fixture';
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs/promises';
-import os from 'os';
+import { DIDAXIS_URL } from '../fixtures/auth.constants';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 
-const DIDAXIS_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
-const LOGIN_URL = `${DIDAXIS_URL}/login`;
 const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
 
-const EMAIL = process.env.DIDAXIS_EMAIL;
-const PASSWORD = process.env.DIDAXIS_PASSWORD;
 const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
 
-if (!EMAIL || !PASSWORD || !API_TOKEN) {
+if (!API_TOKEN) {
   throw new Error(
-    'DIDAXIS_EMAIL, DIDAXIS_PASSWORD, and DIDAXIS_API_TOKEN must be defined in .env to run DS-1 tests.',
+    'DIDAXIS_API_TOKEN must be defined in .env to run DS-1 tests.',
   );
 }
-
-// Auth state is shared across every test in the worker. The live test server
-// throttles concurrent logins, so we sign in only once per worker and persist
-// the resulting cookies/localStorage to disk.
-type WorkerFixtures = { authedStorageState: string };
-
-const test = base.extend<{}, WorkerFixtures>({
-  authedStorageState: [
-    async ({ browser }, use, workerInfo) => {
-      const storagePath = path.join(
-        os.tmpdir(),
-        'didaxis-auth',
-        `worker-${workerInfo.workerIndex}.json`,
-      );
-      await fs.mkdir(path.dirname(storagePath), { recursive: true });
-
-      const ctx = await browser.newContext();
-      const page = await ctx.newPage();
-      await page.goto(LOGIN_URL, { waitUntil: 'domcontentloaded' });
-      await page.getByLabel('Email').fill(EMAIL!);
-      await page.getByLabel('Password').fill(PASSWORD!);
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL((url) => !url.pathname.endsWith('/login'), {
-        timeout: 30_000,
-      });
-      await ctx.storageState({ path: storagePath });
-      await ctx.close();
-
-      await use(storagePath);
-    },
-    { scope: 'worker' },
-  ],
-
-  storageState: async ({ authedStorageState }, use) => {
-    await use(authedStorageState);
-  },
-});
 
 function uniqueName(prefix: string): string {
   return `${prefix} ${Date.now()}`;
@@ -112,8 +70,7 @@ async function trackProgramByName(
 }
 
 test.describe('DS-1 Create new academic program', () => {
-  // Auth state is injected by the worker-scoped `authedStorageState` fixture,
-  // so each test starts logged in as admin without a per-test login round-trip.
+  // Auth state comes from tests/auth.setup.ts via playwright.config storageState.
 
   /* -------------------------------------------------------------- */
   /* Positive flows                                                  */
