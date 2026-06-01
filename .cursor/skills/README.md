@@ -7,9 +7,24 @@ Cursor Agent Skills for this repository. Each skill is a folder with a `SKILL.md
 ```
 .cursor/skills/
 ├── README.md
-└── your-skill-name/
+├── api-cleanup/
+├── didaxis-program-deleter/
+├── jira-bug-reporter/
+├── jira-ticket-analyzer/
+├── pom-conventions/
+└── <skill-name>/
     └── SKILL.md
 ```
+
+## Available skills
+
+| Skill | When to use |
+|-------|-------------|
+| [api-cleanup](api-cleanup/SKILL.md) | Generating or reviewing tests that create programs or other persistent Didaxis data — ensures teardown so data does not accumulate. |
+| [didaxis-program-deleter](didaxis-program-deleter/SKILL.md) | Deleting specific program UUIDs via REST API, validating deletion, or explicit bulk cleanup in QA. |
+| [jira-bug-reporter](jira-bug-reporter/SKILL.md) | A Playwright test fails and needs root-cause analysis plus a Jira bug ticket. |
+| [jira-ticket-analyzer](jira-ticket-analyzer/SKILL.md) | Turning a Jira ticket (DS-1, DS-2, etc.) into reviewable Gherkin scenarios before writing Playwright code. |
+| [pom-conventions](pom-conventions/SKILL.md) | Generating, refactoring, or reviewing Didaxis UI tests — Page Object Model layout, locators, and file structure; no inline locators in specs. |
 
 ## Adding a skill
 

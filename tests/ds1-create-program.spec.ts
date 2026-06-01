@@ -1,103 +1,38 @@
 import { test, expect } from '../fixtures/cleanup.fixture';
-import type { APIRequestContext, Locator, Page } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
-import { DIDAXIS_URL } from '../fixtures/auth.constants';
+import { ProgramsPage } from '../pages/programs.page';
+import {
+  openNewProgramForm,
+  requireApiToken,
+  trackProgramByName,
+  uniqueName,
+} from './helpers/didaxis-programs.helpers';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
-
-const PROGRAMS_URL = `${DIDAXIS_URL}/programs`;
-
-const API_TOKEN = process.env.DIDAXIS_API_TOKEN;
-
-if (!API_TOKEN) {
-  throw new Error(
-    'DIDAXIS_API_TOKEN must be defined in .env to run DS-1 tests.',
-  );
-}
-
-function uniqueName(prefix: string): string {
-  return `${prefix} ${Date.now()}`;
-}
-
-async function openProgramForm(page: Page): Promise<void> {
-  await page.goto(PROGRAMS_URL);
-  await page.getByRole('button', { name: 'New Program' }).click();
-  await expect(programNameInput(page)).toBeVisible();
-}
-
-function programNameInput(page: Page): Locator {
-  return page.getByLabel('Program Name');
-}
-
-function descriptionInput(page: Page): Locator {
-  return page.getByLabel('Description');
-}
-
-function createButton(page: Page): Locator {
-  return page.getByRole('button', { name: 'Create', exact: true });
-}
-
-function newProgramButton(page: Page): Locator {
-  // The visible label includes a leading "+"; the template documents the locator
-  // as `getByRole('button', { name: 'New Program' })`, which still works because
-  // `name` is a substring match by default.
-  return page.getByRole('button', { name: 'New Program' });
-}
-
-function programInList(page: Page, name: string): Locator {
-  return page.getByText(name, { exact: true });
-}
-
-type TrackProgramFn = (id: string) => void;
-
-async function trackProgramByName(
-  request: APIRequestContext,
-  trackProgram: TrackProgramFn,
-  name: string,
-): Promise<void> {
-  const response = await request.get(`${DIDAXIS_URL}/api/programs`, {
-    headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
-    },
-  });
-  expect(response.ok()).toBeTruthy();
-
-  const body = (await response.json()) as { data?: Array<{ id: string; name: string }> };
-  const created = body.data?.find((program) => program.name === name);
-  expect(created, `Expected "${name}" to exist in API program list.`).toBeTruthy();
-  trackProgram(created!.id);
-}
+requireApiToken('DS-1');
 
 test.describe('DS-1 Create new academic program', () => {
   // Auth state comes from tests/auth.setup.ts via playwright.config storageState.
 
-  /* -------------------------------------------------------------- */
-  /* Positive flows                                                  */
-  /* -------------------------------------------------------------- */
   test.describe('Positive flows', () => {
     test('TC-001 Admin can open the program creation form from the Programs page', async ({
       page,
     }) => {
-      await page.goto(PROGRAMS_URL);
-      await newProgramButton(page).click();
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await expect(programNameInput(page)).toBeVisible();
-      await expect(programNameInput(page)).toBeEnabled();
-      await expect(descriptionInput(page)).toBeVisible();
-      await expect(descriptionInput(page)).toBeEnabled();
-      await expect(createButton(page)).toBeVisible();
-      await expect(createButton(page)).toBeDisabled();
+      await expect(modal.programNameInput).toBeVisible();
+      await expect(modal.programNameInput).toBeEnabled();
+      await expect(modal.descriptionInput).toBeVisible();
+      await expect(modal.descriptionInput).toBeEnabled();
+      await expect(modal.createButton).toBeVisible();
+      await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-002 Opening the form reveals an interactive Program Name field', async ({ page }) => {
-      // Verified against the live app: on open, focus lands on the modal close button,
-      // not on the Program Name input. We therefore assert that the field is reachable
-      // and editable, rather than auto-focused.
-      await page.goto(PROGRAMS_URL);
-      await newProgramButton(page).click();
+    test('TC-002 Opening the form reveals an interactive Program Name field', async ({
+      page,
+    }) => {
+      const programs = await openNewProgramForm(page);
+      const nameField = programs.newProgramModal.programNameInput;
 
-      const nameField = programNameInput(page);
       await expect(nameField).toBeVisible();
       await expect(nameField).toBeEditable();
       await nameField.click();
@@ -111,14 +46,15 @@ test.describe('DS-1 Create new academic program', () => {
     }) => {
       const name = uniqueName('Web Development');
       const description = 'Full-stack web development program';
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await descriptionInput(page).fill(description);
-      await createButton(page).click();
+      await modal.fillProgramName(name);
+      await modal.fillDescription(description);
+      await modal.submit();
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, name)).toBeVisible();
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
 
@@ -128,121 +64,123 @@ test.describe('DS-1 Create new academic program', () => {
       trackProgram,
     }) => {
       const name = uniqueName('Persisted Program');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await createButton(page).click();
-      await expect(programInList(page, name)).toBeVisible();
+      await modal.fillProgramName(name);
+      await modal.submit();
+      await expect(programs.programInList(name)).toBeVisible();
 
       await page.reload();
 
-      await expect(programInList(page, name)).toBeVisible();
+      const reloaded = new ProgramsPage(page);
+      await expect(reloaded.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
 
     test('TC-005 Create button becomes enabled as soon as Program Name has content', async ({
       page,
     }) => {
-      await openProgramForm(page);
-      await expect(createButton(page)).toBeDisabled();
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await programNameInput(page).fill('W');
-
-      await expect(createButton(page)).toBeEnabled();
+      await expect(modal.createButton).toBeDisabled();
+      await modal.fillProgramName('W');
+      await expect(modal.createButton).toBeEnabled();
     });
 
     test('TC-006 Description is optional', async ({ page, request, trackProgram }) => {
       const name = uniqueName('Data Science');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await createButton(page).click();
+      await modal.fillProgramName(name);
+      await modal.submit();
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, name)).toBeVisible();
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
   });
 
-  /* -------------------------------------------------------------- */
-  /* Negative flows                                                  */
-  /* -------------------------------------------------------------- */
   test.describe('Negative flows', () => {
-    test('TC-N-001 Create button is disabled when Program Name is empty', async ({ page }) => {
-      await openProgramForm(page);
-      await descriptionInput(page).fill('Full-stack web development program');
+    test('TC-N-001 Create button is disabled when Program Name is empty', async ({
+      page,
+    }) => {
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await expect(programNameInput(page)).toHaveValue('');
-      await expect(createButton(page)).toBeDisabled();
+      await modal.fillDescription('Full-stack web development program');
+
+      await expect(modal.programNameInput).toHaveValue('');
+      await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-N-002 Whitespace-only Program Name does not enable Create', async ({ page }) => {
-      await openProgramForm(page);
-      await programNameInput(page).fill('     ');
-      await descriptionInput(page).focus();
+    test('TC-N-002 Whitespace-only Program Name does not enable Create', async ({
+      page,
+    }) => {
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await expect(createButton(page)).toBeDisabled();
+      await modal.fillProgramName('     ');
+      await modal.descriptionInput.focus();
+
+      await expect(modal.createButton).toBeDisabled();
     });
 
     test('TC-N-003 Closing the modal discards the entry', async ({ page }) => {
       const name = uniqueName('Throwaway');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await descriptionInput(page).fill('Should not be saved');
+      await modal.fillProgramName(name);
+      await modal.fillDescription('Should not be saved');
       await page.keyboard.press('Escape');
 
-      await expect(programNameInput(page)).toBeHidden();
+      await expect(modal.programNameInput).toBeHidden();
 
       await page.reload();
-      await expect(programInList(page, name)).toHaveCount(0);
+      const reloaded = new ProgramsPage(page);
+      await expect(reloaded.programInList(name)).toHaveCount(0);
     });
 
     test('TC-N-004 Re-opening the form after dismiss retains the previously entered values', async ({
       page,
     }) => {
-      // Verified against the live app: dismissing the modal via Escape (and via the
-      // Cancel button) does NOT clear the form. Values persist across reopen until a
-      // successful Create resets them. The test asserts this real behavior.
       const draftName = uniqueName('Draft');
       const draftDescription = 'Should not be saved';
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(draftName);
-      await descriptionInput(page).fill(draftDescription);
+      await modal.fillProgramName(draftName);
+      await modal.fillDescription(draftDescription);
       await page.keyboard.press('Escape');
-      await expect(programNameInput(page)).toBeHidden();
+      await expect(modal.programNameInput).toBeHidden();
 
-      await newProgramButton(page).click();
+      await programs.openNewProgram();
 
-      await expect(programNameInput(page)).toHaveValue(draftName);
-      await expect(descriptionInput(page)).toHaveValue(draftDescription);
-      await expect(createButton(page)).toBeEnabled();
+      await expect(modal.programNameInput).toHaveValue(draftName);
+      await expect(modal.descriptionInput).toHaveValue(draftDescription);
+      await expect(modal.createButton).toBeEnabled();
     });
   });
 
-  /* -------------------------------------------------------------- */
-  /* Edge cases                                                      */
-  /* -------------------------------------------------------------- */
   test.describe('Edge cases', () => {
     test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', async ({
       page,
       request,
       trackProgram,
     }) => {
-      // Note: Playwright's getByText with `exact: true` normalizes leading/trailing
-      // whitespace, so asserting the padded form is "not found" is meaningless. We
-      // assert that the trimmed name appears in the list, which is what was verified
-      // against the live app via MCP.
       const trimmed = uniqueName('Trim Test');
       const padded = `   ${trimmed}   `;
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(padded);
-      await createButton(page).click();
+      await modal.fillProgramName(padded);
+      await modal.submit();
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, trimmed)).toBeVisible();
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(trimmed)).toBeVisible();
       await trackProgramByName(request, trackProgram, trimmed);
     });
 
@@ -255,12 +193,11 @@ test.describe('DS-1 Create new academic program', () => {
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).toHaveLength(255);
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await createButton(page).click();
+      const programs = await openNewProgramForm(page);
+      await programs.newProgramModal.create(name);
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, name)).toBeVisible();
+      await expect(programs.newProgramModal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
 
@@ -271,14 +208,12 @@ test.describe('DS-1 Create new academic program', () => {
     }) => {
       const name = uniqueName('Long Description Program');
       const description = 'd'.repeat(2000);
+      const programs = await openNewProgramForm(page);
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await descriptionInput(page).fill(description);
-      await createButton(page).click();
+      await programs.newProgramModal.create(name, description);
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, name)).toBeVisible();
+      await expect(programs.newProgramModal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
 
@@ -296,20 +231,18 @@ test.describe('DS-1 Create new academic program', () => {
         await d.dismiss();
       });
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(xssName);
-      await descriptionInput(page).fill(`O'Brien & "Co."`);
-      await createButton(page).click();
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, xssName)).toBeVisible();
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.create(xssName, `O'Brien & "Co."`);
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(xssName)).toBeVisible();
       await trackProgramByName(request, trackProgram, xssName);
 
-      await newProgramButton(page).click();
-      await programNameInput(page).fill(i18nName);
-      await descriptionInput(page).fill('🚀 Multilingual program 🔥');
-      await createButton(page).click();
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, i18nName)).toBeVisible();
+      await programs.openNewProgram();
+      await modal.create(i18nName, '🚀 Multilingual program 🔥');
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(i18nName)).toBeVisible();
       await trackProgramByName(request, trackProgram, i18nName);
 
       expect(dialogTriggered).toBe(false);
@@ -320,35 +253,28 @@ test.describe('DS-1 Create new academic program', () => {
       request,
       trackProgram,
     }) => {
-      // Single literal characters are not isolation-safe (duplicates behavior is undefined),
-      // so we exercise the lower boundary with a single-letter prefix plus a unique suffix.
       const name = `A${Date.now()}`;
+      const programs = await openNewProgramForm(page);
 
-      await openProgramForm(page);
-      await programNameInput(page).fill(name);
-      await createButton(page).click();
+      await programs.newProgramModal.create(name);
 
-      await expect(programNameInput(page)).toBeHidden();
-      await expect(programInList(page, name)).toBeVisible();
+      await expect(programs.newProgramModal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
       await trackProgramByName(request, trackProgram, name);
     });
 
-    // KNOWN BUG – Jira SS-26 (Create double-click submits twice)
-    // A rapid double-click on the Create button submits the form twice and creates two
-    // identical programs because the button is not disabled while the create request is
-    // in flight. The test below describes the desired behavior; remove the `fixme`
-    // marker once SS-26 is fixed.
     test.fixme(
       'TC-E-009 Rapid double-click on Create does not create two programs',
       async ({ page }) => {
         const name = uniqueName('Idempotent');
+        const programs = await openNewProgramForm(page);
+        const modal = programs.newProgramModal;
 
-        await openProgramForm(page);
-        await programNameInput(page).fill(name);
-        await createButton(page).dblclick();
+        await modal.fillProgramName(name);
+        await modal.createButton.dblclick();
 
-        await expect(programNameInput(page)).toBeHidden();
-        await expect(programInList(page, name)).toHaveCount(1);
+        await expect(modal.programNameInput).toBeHidden();
+        await expect(programs.programInList(name)).toHaveCount(1);
       },
     );
   });

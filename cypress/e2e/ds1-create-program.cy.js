@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-const APP_BASE = 'https://test.didaxis.studio';
+const APP_BASE = Cypress.env('DIDAXIS_URL');
 const LOGIN_PATH = '/login';
 const PROGRAMS_PATH = '/programs';
 

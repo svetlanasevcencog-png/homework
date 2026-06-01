@@ -1,4 +1,6 @@
 const { defineConfig } = require('cypress');
+const { DEFAULT_DIDAXIS_URL } = require('./fixtures/didaxis-url.js');
+
 require('dotenv').config();
 
 module.exports = defineConfig({
@@ -13,6 +15,7 @@ module.exports = defineConfig({
     retries: { runMode: 1, openMode: 0 },
     env: {
       ...process.env,
+      DIDAXIS_URL: process.env.DIDAXIS_URL || DEFAULT_DIDAXIS_URL,
     },
   },
 });
