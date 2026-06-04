@@ -10,8 +10,10 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: 0
+    # Official Playwright image: browsers + OS deps are pre-installed.
+    # Pin the tag to the @playwright/test version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -20,15 +22,6 @@ jobs:
         cache: npm
     - name: Install npm dependencies
       run: npm ci --ignore-scripts
-    - name: Cache Playwright browsers
-      uses: actions/cache@v4
-      with:
-        path: node_modules/playwright-core/.local-browsers
-        key: playwright-browsers-${{ hashFiles('package-lock.json') }}
-    - name: Install Playwright Chromium
-      run: npx playwright install chromium --only-shell
-    - name: Install Playwright OS dependencies
-      run: npx playwright install-deps chromium
     - name: Run Playwright tests
       env:
         DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
