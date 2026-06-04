@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/svetlanasevcencog-png/homework#readme",
   "devDependencies": {
+    "@playwright/browser-chromium": "1.59.1",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.0",
     "cypress": "^15.14.2"
