@@ -11,7 +11,6 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
-      # Hermetic install: Chromium lives under node_modules (via @playwright/browser-chromium).
       PLAYWRIGHT_BROWSERS_PATH: 0
     steps:
     - uses: actions/checkout@v4
@@ -19,13 +18,15 @@ jobs:
       with:
         node-version: lts/*
         cache: npm
+    - name: Install npm dependencies
+      run: npm ci --ignore-scripts
     - name: Cache Playwright browsers
       uses: actions/cache@v4
       with:
         path: node_modules/playwright-core/.local-browsers
         key: playwright-browsers-${{ hashFiles('package-lock.json') }}
-    - name: Install dependencies
-      run: npm ci
+    - name: Install Playwright Chromium
+      run: npx playwright install chromium --only-shell
     - name: Install Playwright OS dependencies
       run: npx playwright install-deps chromium
     - name: Run Playwright tests
