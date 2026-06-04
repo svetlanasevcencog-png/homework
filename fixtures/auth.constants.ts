@@ -13,3 +13,6 @@ export const AUTH_STORAGE_PATH = path.join(
 export const DIDAXIS_URL = process.env.DIDAXIS_URL || DEFAULT_DIDAXIS_URL;
 
 export const DIDAXIS_LOGIN_URL = `${DIDAXIS_URL}/login`;
+
+/** Explicit empty session for unauthenticated / guest Playwright projects. */
+export const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };

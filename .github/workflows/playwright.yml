@@ -4,6 +4,8 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
+
 jobs:
   test:
     timeout-minutes: 60
@@ -16,9 +18,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install chromium --with-deps
     - name: Run Playwright tests
-      run: npx playwright test
+      env:
+        DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+        DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+        DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+        DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+      run: npx playwright test --project=setup --project=chromium-didaxis --project=chromium-guest
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

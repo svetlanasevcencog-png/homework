@@ -1,11 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
-import { AUTH_STORAGE_PATH } from './fixtures/auth.constants';
+import {
+  AUTH_STORAGE_PATH,
+  EMPTY_STORAGE_STATE,
+} from './fixtures/auth.constants';
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const didaxisSpecPattern = /ds\d-.*\.spec\.ts/;
+const loginPageSpecPattern = /login-page\.spec\.ts/;
+const demoSpecIgnore = [
+  /.*\.setup\.ts/,
+  didaxisSpecPattern,
+  loginPageSpecPattern,
+];
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -34,17 +43,27 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/.*\.setup\.ts/, didaxisSpecPattern],
+      testIgnore: demoSpecIgnore,
     },
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: [/.*\.setup\.ts/, didaxisSpecPattern],
+      testIgnore: demoSpecIgnore,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testIgnore: [/.*\.setup\.ts/, didaxisSpecPattern],
+      testIgnore: demoSpecIgnore,
+    },
+
+    // Guest / unauthenticated Didaxis specs (no setup dependency).
+    {
+      name: 'chromium-guest',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: EMPTY_STORAGE_STATE,
+      },
+      testMatch: loginPageSpecPattern,
     },
 
     // Didaxis specs: depend on setup, then reuse persisted session.
