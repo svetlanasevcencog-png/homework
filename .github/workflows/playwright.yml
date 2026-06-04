@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: E2E Tests
 on:
   push:
     branches: [ main, master ]
@@ -47,4 +47,33 @@ jobs:
       with:
         name: playwright-report
         path: playwright-report/
+        retention-days: 30
+
+  cypress:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    # Secrets live in the "dev1" GitHub Environment.
+    environment: dev1
+    env:
+      # Cypress provides its own browser; skip the Playwright browser download
+      # that @playwright/browser-chromium would otherwise trigger on npm ci.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: npm
+    - name: Run Cypress tests
+      uses: cypress-io/github-action@v6
+      env:
+        DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+        DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+        DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+        DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+    - uses: actions/upload-artifact@v4
+      if: ${{ failure() }}
+      with:
+        name: cypress-screenshots
+        path: cypress/screenshots/
         retention-days: 30
