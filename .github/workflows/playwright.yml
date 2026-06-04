@@ -10,6 +10,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    # Secrets live in the "dev1" GitHub Environment.
+    environment: dev1
     # Official Playwright image: browsers + OS deps are pre-installed.
     # Pin the tag to the @playwright/test version in package.json.
     container:
