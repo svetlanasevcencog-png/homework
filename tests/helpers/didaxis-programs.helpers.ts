@@ -98,7 +98,9 @@ export async function createProgram(
     await row.scrollIntoViewIfNeeded();
     await expect(row).toBeVisible();
   } else {
-    await expect(programs.programInList(name)).toBeVisible();
+    // Use .first(): duplicate names are allowed (SS-25), so this locator
+    // can match multiple rows after a second create with the same name.
+    await expect(programs.programInList(name).first()).toBeVisible();
   }
 
   await trackProgramByName(request, trackProgram, name);
