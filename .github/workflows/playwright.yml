@@ -22,6 +22,17 @@ jobs:
         cache: npm
     - name: Install npm dependencies
       run: npm ci --ignore-scripts
+    - name: Verify secrets are present (no values printed)
+      env:
+        DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+        DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+        DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+        DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+      run: |
+        echo "DIDAXIS_EMAIL set:     ${DIDAXIS_EMAIL:+true}"
+        echo "DIDAXIS_PASSWORD set:  ${DIDAXIS_PASSWORD:+true}"
+        echo "DIDAXIS_API_TOKEN set: ${DIDAXIS_API_TOKEN:+true}"
+        echo "DIDAXIS_URL set:       ${DIDAXIS_URL:+true}"
     - name: Run Playwright tests
       env:
         DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
