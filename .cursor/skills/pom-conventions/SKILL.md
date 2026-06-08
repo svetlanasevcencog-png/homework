@@ -140,11 +140,17 @@ Do not attempt to fix or work around these intentional demo-app behaviors.
 Document them in test titles or comments; use `test.fixme` when the test
 describes desired behavior that is not yet implemented.
 
+Known defects are tracked across two Jira projects: **SS**
+(`SofTka_StudentRegisterFormTest`, e.g. SS-25 = "SS BUG-002") and **DS**
+(`Didaxis Studio`, e.g. DS-35). Reference whichever project the ticket
+actually lives in.
+
 | Issue | Jira | Affected tests | Notes |
 |-------|------|----------------|-------|
 | Duplicate program names allowed on create | SS-25 | DS-3 TC-005, TC-008, TC-009, TC-015; DS-5 TC-015 | Assert current behavior (`toHaveCount(2)`), do not expect validation errors |
 | Duplicate names allowed on rename | SS-25 | DS-2 TC-017 | Documents live behavior; not marked `test.fail` |
 | Create double-click submits twice | SS-26 | DS-1 TC-E-009, DS-3 TC-018 | Use `test.fixme` until fixed |
+| Programs list API 500 shows empty state instead of error | DS-35 (dup DS-72) | DS-5 TC-007 | Assert current behavior (`emptyStateMessage` visible); update to expect an error state once fixed |
 
 ## Output
 

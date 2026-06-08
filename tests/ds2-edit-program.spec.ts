@@ -1,6 +1,8 @@
 import { test, expect } from '../fixtures/cleanup.fixture';
 import {
+  assertGuestRedirectedToLogin,
   createProgram,
+  failProgramApi,
   openEditForProgram,
   requireApiToken,
   uniqueName,
@@ -165,16 +167,56 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.editProgramModal.programNameInput).toHaveValue(original);
     });
 
-    test.fixme('TC-006 Program list must not show a new name if save fails', async () => {});
+    test('TC-006 Program list must not show a new name if save fails', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const original = uniqueName('Save Fail');
+      await createProgram(page, request, trackProgram, original);
+      const programs = await openEditForProgram(page, original);
+      const modal = programs.editProgramModal;
+      const attempted = `${original} - Renamed`;
 
+      await failProgramApi(page, ['PUT', 'PATCH']);
+      await modal.fillProgramName(attempted);
+      await modal.submit();
+
+      // Save was rejected by the backend: the attempted name must not leak
+      // into the list, and the original must remain.
+      await expect(programs.programInList(attempted)).toHaveCount(0);
+      await expect(programs.programInList(original)).toHaveCount(1);
+    });
+
+    test('TC-010 Modal must not close when backend rejects the save payload', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const original = uniqueName('Reject Save');
+      await createProgram(page, request, trackProgram, original);
+      const programs = await openEditForProgram(page, original);
+      const modal = programs.editProgramModal;
+
+      await failProgramApi(page, ['PUT', 'PATCH']);
+      await modal.fillProgramName(`${original} - Rejected`);
+      await modal.submit();
+
+      // The modal must stay open so the user can correct and retry.
+      await expect(modal.dialog).toBeVisible();
+      await expect(modal.programNameInput).toBeVisible();
+    });
+
+    test('TC-009 Unauthorized user must not open edit or save changes', async ({
+      browser,
+    }) => {
+      await assertGuestRedirectedToLogin(browser, '/programs');
+    });
+
+    // The program form exposes only Name and Description — there are no date
+    // inputs in the New/Edit Program modal, so a date-range rule cannot be
+    // exercised against this app.
     test.fixme('TC-008 Invalid date range must not be persisted', async () => {});
-
-    test.fixme('TC-009 Unauthorized user must not open edit or save changes', async () => {});
-
-    test.fixme(
-      'TC-010 Modal must not close when backend rejects the save payload',
-      async () => {},
-    );
   });
 
   test.describe('Edge cases', () => {

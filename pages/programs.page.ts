@@ -64,6 +64,12 @@ export class ProgramsPage extends BasePage {
     return this.page.getByRole('button', { name: `Delete ${programName}` });
   }
 
+  /** Delete control scoped to a single row — required when duplicate names
+   * make `deleteButtonFor(name)` match more than one button. */
+  deleteButtonInRow(row: Locator) {
+    return row.getByRole('button', { name: /^Delete / });
+  }
+
   async openEditFor(programName: string) {
     await this.editButtonFor(programName).click();
   }

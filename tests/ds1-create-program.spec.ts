@@ -263,6 +263,8 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, name);
     });
 
+    // Known defect SS-26: rapid double-click submits twice and creates two
+    // programs. Keep deferred until the submit is de-bounced.
     test.fixme(
       'TC-E-009 Rapid double-click on Create does not create two programs',
       async ({ page }) => {
