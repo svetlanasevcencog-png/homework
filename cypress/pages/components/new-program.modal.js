@@ -1,7 +1,7 @@
 class NewProgramModal {
-  dialog() {
+  dialog(options) {
     return cy
-      .get('[role="dialog"]')
+      .get('[role="dialog"]', options)
       .filter(':has(h2:contains("New Program"))');
   }
 
