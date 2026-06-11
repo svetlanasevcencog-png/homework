@@ -189,7 +189,8 @@ test.describe('DS-1 Create new academic program', () => {
       request,
       trackProgram,
     }) => {
-      const suffix = ` ${Date.now()}`;
+      // uniqueName('') yields a collision-proof " <timestamp>-<random>" suffix.
+      const suffix = uniqueName('');
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).toHaveLength(255);
 
@@ -222,8 +223,8 @@ test.describe('DS-1 Create new academic program', () => {
       request,
       trackProgram,
     }) => {
-      const xssName = `<script>alert(1)</script> ${Date.now()}`;
-      const i18nName = `任务一 / مهمة / задача ${Date.now()}`;
+      const xssName = uniqueName('<script>alert(1)</script>');
+      const i18nName = uniqueName('任务一 / مهمة / задача');
 
       let dialogTriggered = false;
       page.on('dialog', async (d) => {
@@ -253,7 +254,7 @@ test.describe('DS-1 Create new academic program', () => {
       request,
       trackProgram,
     }) => {
-      const name = `A${Date.now()}`;
+      const name = uniqueName('A');
       const programs = await openNewProgramForm(page);
 
       await programs.newProgramModal.create(name);
