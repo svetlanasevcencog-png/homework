@@ -17,7 +17,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `Informatique & IA - Niveau 2 ${Date.now()}`;
+      const name = uniqueName('Informatique & IA - Niveau 2');
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
@@ -49,7 +49,8 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const suffix = ` ${Date.now()}`;
+      // uniqueName('') yields a collision-proof " <timestamp>-<random>" suffix.
+      const suffix = uniqueName('');
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).toHaveLength(255);
 
@@ -189,7 +190,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `École d'été — Zürich 2026 ${Date.now()}`;
+      const name = uniqueName(`École d'été — Zürich 2026`);
       const programs = await openNewProgramForm(page);
 
       await programs.newProgramModal.fillProgramName(name);
@@ -203,7 +204,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `Web Dev 2026 🚀 ${Date.now()}`;
+      const name = uniqueName('Web Dev 2026 🚀');
       const programs = await openNewProgramForm(page);
 
       await programs.newProgramModal.fillProgramName(name);
@@ -217,7 +218,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `<script>alert(1)</script> Program ${Date.now()}`;
+      const name = uniqueName('<script>alert(1)</script> Program');
       let dialogTriggered = false;
       page.on('dialog', async (d) => {
         dialogTriggered = true;
@@ -271,7 +272,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `A${Date.now()}`;
+      const name = uniqueName('A');
       const programs = await openNewProgramForm(page);
 
       await programs.newProgramModal.fillProgramName(name);
@@ -285,7 +286,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       request,
       trackProgram,
     }) => {
-      const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
+      const name = uniqueName(`R&D "Phase 1" - Cost: 100%`);
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
