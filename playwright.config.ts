@@ -27,6 +27,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  // The shared test backend renders slowly under parallel load; the 5s
+  // default expect timeout has produced false-negative flakes.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: process.env.BASE_URL,
     trace: 'on-first-retry',
