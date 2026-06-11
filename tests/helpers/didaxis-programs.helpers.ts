@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
 import type { APIRequestContext, Browser, Locator, Page } from '@playwright/test';
 import dotenv from 'dotenv';
@@ -22,8 +23,10 @@ export function requireApiToken(suiteLabel: string): void {
   }
 }
 
+/** Timestamp plus random segment: collision-proof across parallel
+ * workers/projects sharing one backend (Date.now() alone is not). */
 export function uniqueName(prefix: string): string {
-  return `${prefix} ${Date.now()}`;
+  return `${prefix} ${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
 
 export async function trackProgramByName(
