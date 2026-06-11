@@ -183,7 +183,8 @@ test.describe('DS-5 Program list filtering and display', () => {
       request,
       trackProgram,
     }) => {
-      const suffix = ` ${Date.now()}`;
+      // uniqueName('') yields a collision-proof " <timestamp>-<random>" suffix.
+      const suffix = uniqueName('');
       const name = 'P'.repeat(255 - suffix.length) + suffix;
       const description = 'Boundary name length row';
 
@@ -199,7 +200,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       request,
       trackProgram,
     }) => {
-      const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
+      const name = uniqueName(`R&D "Phase 1" - Cost: 100%`);
       const description = 'Learn <HTML> & "quotes" — 50% practice.';
       let dialogTriggered = false;
       page.on('dialog', async (d) => {
@@ -221,7 +222,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       request,
       trackProgram,
     }) => {
-      const name = `École d'été — Zürich ${Date.now()}`;
+      const name = uniqueName(`École d'été — Zürich`);
       const description = '日本語サマー — cohort mixte.';
 
       await createProgram(page, request, trackProgram, name, { description });
