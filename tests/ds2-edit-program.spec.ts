@@ -144,6 +144,25 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
+    test('TC-021 Whitespace-only Name does not enable Save', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const name = uniqueName('Web Development 2026');
+
+      await createProgram(page, request, trackProgram, name);
+      const programs = await openEditForProgram(page, name);
+      const modal = programs.editProgramModal;
+
+      await modal.fillProgramName('     ');
+      await modal.descriptionInput.focus();
+      await expect(modal.saveButton).toBeDisabled();
+
+      await page.keyboard.press('Escape');
+      await expect(programs.programInList(name)).toBeVisible();
+    });
+
     test('TC-011 Cancel discards edits and list keeps the original name', async ({
       page,
       request,
@@ -226,7 +245,8 @@ test.describe('DS-2 Edit existing program details', () => {
       trackProgram,
     }) => {
       const original = uniqueName('Max Length');
-      const suffix = ` ${Date.now()}`;
+      // uniqueName('') yields a collision-proof " <timestamp>-<random>" suffix.
+      const suffix = uniqueName('');
       const maxName = 'A'.repeat(255 - suffix.length) + suffix;
       expect(maxName).toHaveLength(255);
 
@@ -292,7 +312,7 @@ test.describe('DS-2 Edit existing program details', () => {
       trackProgram,
     }) => {
       const original = uniqueName('Special Chars Base');
-      const special = `Web Dev 2026 <Advanced> & "React" — 100% ${Date.now()}`;
+      const special = uniqueName(`Web Dev 2026 <Advanced> & "React" — 100%`);
 
       let dialogTriggered = false;
       page.on('dialog', async (d) => {
