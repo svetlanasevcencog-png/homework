@@ -17,8 +17,10 @@ node_modules/
 .env.*
 !.env.example
 
-# Local tooling artifacts (keep project skills versioned)
+# Local tooling artifacts (keep project skills, agents, and rules versioned)
 .cursor/*
 !.cursor/skills/
+!.cursor/agents/
+!.cursor/rules/
 .playwright-mcp/
 test-results/
