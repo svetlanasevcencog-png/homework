@@ -342,9 +342,15 @@ test.describe('DS-4 Delete program with confirmation', () => {
       const rowA = programs.programRow(name).filter({ hasText: 'Cohort A' });
       await clickDeleteButtonWithDialog(page, programs.deleteButtonInRow(rowA), 'accept');
 
-      await expect(programs.programInList(name)).toHaveCount(1);
-      await expect(programs.programRow(name).filter({ hasText: 'Cohort B' })).toHaveCount(1);
-      await expect(programs.programRow(name).filter({ hasText: 'Cohort A' })).toHaveCount(0);
+      // Generous timeout: the list refetch after a confirmed delete can be
+      // slow (observed on webkit), and the default 5s expires mid-transient.
+      await expect(programs.programInList(name)).toHaveCount(1, { timeout: 15_000 });
+      await expect(programs.programRow(name).filter({ hasText: 'Cohort B' })).toHaveCount(1, {
+        timeout: 15_000,
+      });
+      await expect(programs.programRow(name).filter({ hasText: 'Cohort A' })).toHaveCount(0, {
+        timeout: 15_000,
+      });
     });
 
     // Deletion uses a native window.confirm dialog (verified: dialog.type() ===
