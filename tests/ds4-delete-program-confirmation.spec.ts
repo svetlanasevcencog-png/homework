@@ -157,7 +157,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
     }) => {
       const only = {
         id: 'mock-ack-1',
-        name: `Ack Delete ${Date.now()}`,
+        name: uniqueName('Ack Delete'),
         description: 'Pending-ack program',
       };
       let store = [only];
@@ -215,7 +215,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       request,
       trackProgram,
     }) => {
-      const name = `Informatique & IA - Niveau 2 ${Date.now()}`;
+      const name = uniqueName('Informatique & IA - Niveau 2');
 
       const programs = await createProgramForDelete(page, request, trackProgram, name);
       const message = await clickDeleteWithDialog(page, programs, name, 'dismiss');
@@ -228,7 +228,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       request,
       trackProgram,
     }) => {
-      const name = `R&D "Phase 1" - Cost: 100% ${Date.now()}`;
+      const name = uniqueName(`R&D "Phase 1" - Cost: 100%`);
 
       const programs = await createProgramForDelete(page, request, trackProgram, name);
       const previewMessage = await clickDeleteWithDialog(page, programs, name, 'dismiss');
@@ -271,7 +271,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       request,
       trackProgram,
     }) => {
-      const suffix = ` ${Date.now()}`;
+      const suffix = uniqueName('');
       const name = 'L'.repeat(255 - suffix.length) + suffix;
       expect(name).toHaveLength(255);
 
@@ -287,7 +287,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
     }) => {
       const only = {
         id: 'mock-only-program-1',
-        name: `Only Program ${Date.now()}`,
+        name: uniqueName('Only Program'),
         description: 'Sole program',
       };
       let store = [only];

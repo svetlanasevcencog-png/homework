@@ -29,6 +29,10 @@ export function uniqueName(prefix: string): string {
   return `${prefix} ${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
 
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export async function trackProgramByName(
   request: APIRequestContext,
   trackProgram: (id: string) => void,

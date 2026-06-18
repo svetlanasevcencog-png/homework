@@ -6,6 +6,7 @@ import {
   mockEmptyProgramList,
   openProgramsList,
   requireApiToken,
+  escapeRegExp,
   uniqueName,
 } from './helpers/didaxis-programs.helpers';
 
@@ -116,11 +117,13 @@ test.describe('DS-5 Program list filtering and display', () => {
       const list = await openProgramsList(page);
 
       const row = list.programRow(name);
-      const cellText = await list.programDataCell(row).innerText();
+      const cell = list.programDataCell(row);
 
-      expect(cellText.indexOf(name)).toBeLessThan(cellText.indexOf(description));
-      await expect(list.programDataCell(row)).toContainText(name);
-      await expect(list.programDataCell(row)).toContainText(description);
+      await expect(cell).toContainText(name);
+      await expect(cell).toContainText(description);
+      await expect(cell).toHaveText(
+        new RegExp(`${escapeRegExp(name)}[\\s\\S]*${escapeRegExp(description)}`),
+      );
     });
 
     test('TC-002 Empty state message and first-program prompt when no programs exist', async ({
@@ -244,9 +247,9 @@ test.describe('DS-5 Program list filtering and display', () => {
       const list = await openProgramsList(page);
 
       const row = list.programRow(name);
-      await expect(list.programDataCell(row)).toContainText(name);
-      const cellText = (await list.programDataCell(row).innerText()).replace(name, '').trim();
-      expect(cellText.length).toBeLessThanOrEqual(2);
+      await expect(list.programDataCell(row)).toHaveText(
+        new RegExp(`^\\s*${escapeRegExp(name)}\\s{0,2}$`),
+      );
     });
 
     test('TC-015 Duplicate program names show two distinguishable rows (SS-25)', async ({
