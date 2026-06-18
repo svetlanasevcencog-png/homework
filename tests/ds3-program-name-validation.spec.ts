@@ -169,20 +169,21 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
     test('TC-011 Name one character over maximum is rejected or blocked', async ({
       page,
     }) => {
-      const tooLong = `${'B'.repeat(256)}${Date.now()}`;
+      const tooLong = `${'B'.repeat(256)}${uniqueName('')}`;
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
       await modal.fillProgramName(tooLong);
 
-      const disabled = await modal.createButton.isDisabled();
-      if (!disabled) {
-        await modal.submit();
-        await expect(modal.programNameInput).toBeVisible();
-        await expect(programs.programInList(tooLong)).toHaveCount(0);
-      } else {
-        await expect(modal.createButton).toBeDisabled();
-      }
+      await expect(async () => {
+        if (await modal.createButton.isEnabled()) {
+          await modal.submit();
+          await expect(modal.dialog).toBeVisible();
+          await expect(programs.programInList(tooLong)).toHaveCount(0);
+        } else {
+          await expect(modal.createButton).toBeDisabled();
+        }
+      }).toPass();
     });
 
     test('TC-012 Unicode and accented characters in name are accepted when unique', async ({

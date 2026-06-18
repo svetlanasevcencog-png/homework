@@ -267,7 +267,7 @@ test.describe('DS-2 Edit existing program details', () => {
       trackProgram,
     }) => {
       const name = uniqueName('Over Max');
-      const tooLong = `${'B'.repeat(256)}${Date.now()}`;
+      const tooLong = `${'B'.repeat(256)}${uniqueName('')}`;
 
       await createProgram(page, request, trackProgram, name);
       const programs = await openEditForProgram(page, name);
@@ -275,15 +275,16 @@ test.describe('DS-2 Edit existing program details', () => {
 
       await modal.fillProgramName(tooLong);
 
-      const disabled = await modal.saveButton.isDisabled();
-      if (!disabled) {
-        await modal.submit();
-        await expect(modal.programNameInput).toBeVisible();
-        await expect(programs.programInList(name)).toBeVisible();
-        await expect(programs.programInList(tooLong)).toHaveCount(0);
-      } else {
-        await expect(modal.saveButton).toBeDisabled();
-      }
+      await expect(async () => {
+        if (await modal.saveButton.isEnabled()) {
+          await modal.submit();
+          await expect(modal.dialog).toBeVisible();
+          await expect(programs.programInList(name)).toBeVisible();
+          await expect(programs.programInList(tooLong)).toHaveCount(0);
+        } else {
+          await expect(modal.saveButton).toBeDisabled();
+        }
+      }).toPass();
     });
 
     test('TC-014 Long Description (2000 characters) is accepted', async ({
