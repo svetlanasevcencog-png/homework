@@ -15,6 +15,7 @@ When invoked:
 3. Report the spec path and hand back to the parent agent to run it.
 
 Conventions:
+- Follow the `playwright-conventions` rule for general Playwright standards (locators, waiting, auth, anti-flake).
 - Follow the `pom-conventions` skill: use Page Object Models, never inline locators in specs.
 - Follow the `api-cleanup` skill: any test that creates data (programs, persistent records) must clean it up.
 
