@@ -151,6 +151,7 @@ actually lives in.
 | Duplicate names allowed on rename | SS-25 | DS-2 TC-017 | Documents live behavior; not marked `test.fail` |
 | Create double-click submits twice | SS-26 | DS-1 TC-E-009, DS-3 TC-018 | Use `test.fixme` until fixed |
 | Programs list API 500 shows empty state instead of error | DS-35 (dup DS-72) | DS-5 TC-007 | Assert current behavior (`emptyStateMessage` visible); update to expect an error state once fixed |
+| Programs page WCAG 2 AA color-contrast failures | DS-113 | DS-6 fixme `programs page has no wcag2a/aa violations` | Sidebar Sign out + muted list text below 4.5:1; axe scan quarantined with `test.fixme` |
 
 ## Output
 

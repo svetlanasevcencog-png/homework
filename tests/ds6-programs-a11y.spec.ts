@@ -15,8 +15,8 @@ test.describe('DS-6 Programs accessibility', () => {
     expect(Array.isArray(results.violations)).toBe(true);
   });
 
-  // App-level color-contrast defects in sidebar nav and table chrome (e.g. Sign out
-  // label 4.3:1, muted table header 3.13:1). Re-enable once the UI meets wcag2aa.
+  // App-level color-contrast defects (DS-113): sidebar Sign out 4.3:1, muted
+  // table/secondary text ~3.3:1 vs WCAG 2 AA 4.5:1. Re-enable once fixed.
   test.fixme(
     'programs page has no wcag2a/aa violations',
     async ({ page }, testInfo) => {
