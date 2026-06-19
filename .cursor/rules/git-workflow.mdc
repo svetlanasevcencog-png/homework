@@ -1,0 +1,45 @@
+---
+description: Git and GitHub workflow — never push to main; always use a feature branch and pull request.
+alwaysApply: true
+---
+
+# Git Workflow
+
+**Never push to `main`.** A human approves merges via pull request.
+
+## Default workflow
+
+When the user asks to commit, push, or publish work:
+
+1. If on `main`, create a feature branch first:
+   `git checkout -b <type>/<short-slug>`
+2. Commit on that branch.
+3. Push the branch: `git push -u origin HEAD`
+4. Open a PR: `gh pr create`
+
+## Interpreting "push"
+
+- **"Push to remote"**, **"push"**, **"publish"** → push the **feature branch**, then open a PR.
+- **Do not** run `git push origin main` unless the user **explicitly** says to push directly to `main` (e.g. "push directly to main", "skip PR").
+
+## Prohibited without explicit user request
+
+- `git push origin main`
+- `git push --force` to `main` or `master`
+- Committing feature work on `main` when a branch could be used
+
+## If work is already on local `main`
+
+Stop before pushing. Move commits to a branch:
+
+```bash
+git checkout -b feat/<slug>
+git push -u origin HEAD
+gh pr create
+```
+
+Do not push `main` to repair this — ask the user if history on remote `main` needs a separate fix.
+
+## PR body
+
+Include Summary and Test plan (see project PR conventions).
