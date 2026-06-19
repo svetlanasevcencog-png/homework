@@ -59,12 +59,18 @@ jobs:
           DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
           DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
           DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           echo "CURSOR_API_KEY set:    ${CURSOR_API_KEY:+true}"
           echo "DIDAXIS_EMAIL set:     ${DIDAXIS_EMAIL:+true}"
           echo "DIDAXIS_PASSWORD set:  ${DIDAXIS_PASSWORD:+true}"
           echo "DIDAXIS_API_TOKEN set: ${DIDAXIS_API_TOKEN:+true}"
           echo "DIDAXIS_URL set:       ${DIDAXIS_URL:+true}"
+          echo "JIRA_BASE_URL set:     ${JIRA_BASE_URL:+true}"
+          echo "JIRA_EMAIL set:        ${JIRA_EMAIL:+true}"
+          echo "JIRA_API_TOKEN set:    ${JIRA_API_TOKEN:+true}"
 
       - name: Configure git identity for PR branches
         run: |
@@ -79,6 +85,10 @@ jobs:
           DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
           DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
           DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+          # Jira REST access (headless — replaces the OAuth Atlassian MCP).
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           # Lets the agent push branches and open PRs via the gh CLI.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MODEL: auto
