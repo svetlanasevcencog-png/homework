@@ -151,7 +151,11 @@ actually lives in.
 | Duplicate names allowed on rename | SS-25 | DS-2 TC-017 | Documents live behavior; not marked `test.fail` |
 | Create double-click submits twice | SS-26 | DS-1 TC-E-009, DS-3 TC-018 | Use `test.fixme` until fixed |
 | Programs list API 500 shows empty state instead of error | DS-35 (dup DS-72) | DS-5 TC-007 | Assert current behavior (`emptyStateMessage` visible); update to expect an error state once fixed |
-| Programs page WCAG 2 AA color-contrast failures | DS-113 | DS-6 fixme `programs page has no wcag2a/aa violations` | Sidebar Sign out + muted list text below 4.5:1; axe scan quarantined with `test.fixme` |
+| Programs page WCAG 2 AA color-contrast failures | DS-113 | DS-5 fixme `TC-A-002 programs page has no wcag2a/aa violations` | Sidebar Sign out + muted list text below 4.5:1; axe scan quarantined with `test.fixme` |
+| API failures show no user-visible error on create/edit/delete | DS-116 | DS-3 TC-007; DS-2 TC-010; DS-4 TC-006 | Modal/row state is correct, but no toast/banner; silent failure |
+| Malformed GET /api/programs blanks the authenticated programs view | DS-114 | DS-5 TC-007b | Page shell disappears; no error/retry UI |
+| Invalid Total Program Hours closes modal without creating or explaining | DS-115 | DS-1 TC-N-006, TC-N-007 | Silent reject for `abc` and `-5`; no inline validation |
+| Actions column header has no accessible name | DS-117 | DS-5 TC-A-003 | Second `columnheader` is empty with no `aria-label` |
 
 ## Output
 

@@ -1,13 +1,18 @@
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from '../fixtures/cleanup.fixture';
+import { DashboardPage } from '../pages/dashboard.page';
+import { ProgramsPage } from '../pages/programs.page';
 import {
   assertGuestRedirectedToLogin,
   createProgram,
   failProgramApi,
   mockEmptyProgramList,
+  mockMalformedProgramList,
   openProgramsList,
   requireApiToken,
   escapeRegExp,
   uniqueName,
+  visibleFailureMessages,
 } from './helpers/didaxis-programs.helpers';
 
 requireApiToken('DS-5');
@@ -84,6 +89,66 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programDataCell(row)).toContainText(description);
       await expect(list.emptyStateMessage).toHaveCount(0);
     });
+
+    test('TC-004b Authenticated programs page shows heading, table, and new-program action', async ({
+      page,
+    }) => {
+      const programs = await openProgramsList(page);
+
+      await expect(programs.heading).toBeVisible();
+      await expect(programs.programsTable).toBeVisible();
+      await expect(programs.programColumnHeader).toBeVisible();
+      await expect(programs.newProgramButton).toBeVisible();
+    });
+
+    test('TC-004c Sidebar navigation is visible on the programs page', async ({ page }) => {
+      const programs = await openProgramsList(page);
+      const nav = programs.navigation;
+
+      await expect(nav.dashboardButton).toBeVisible();
+      await expect(nav.programsButton).toBeVisible();
+      await expect(nav.calendarButton).toBeVisible();
+      await expect(nav.validationButton).toBeVisible();
+      await expect(nav.schedulerButton).toBeVisible();
+      await expect(nav.exportButton).toBeVisible();
+      await expect(nav.settingsButton).toBeVisible();
+      await expect(nav.signOutButton).toBeVisible();
+    });
+
+    test('TC-004d Programs table exposes Program and actions column headers', async ({
+      page,
+    }) => {
+      const programs = await openProgramsList(page);
+
+      await expect(programs.programColumnHeader).toBeVisible();
+      await expect(programs.tableColumnHeaders).toHaveCount(2);
+    });
+
+    test('TC-004e Row exposes Edit and Delete controls by accessible name', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const name = uniqueName('Shell Row Actions');
+      await createProgram(page, request, trackProgram, name);
+      const programs = await openProgramsList(page);
+
+      await expect(programs.editButtonFor(name)).toBeVisible();
+      await expect(programs.deleteButtonFor(name)).toBeVisible();
+    });
+
+    test('TC-004f Sidebar Programs navigation opens the programs page', async ({ page }) => {
+      const dashboard = new DashboardPage(page);
+      await dashboard.goto();
+      await expect(dashboard.heading).toBeVisible();
+
+      await dashboard.navigation.goToPrograms();
+
+      await expect(page).toHaveURL(/\/programs$/);
+      const programs = new ProgramsPage(page);
+      await expect(programs.heading).toBeVisible();
+      await expect(programs.newProgramButton).toBeVisible();
+    });
   });
 
   test.describe('Negative flows', () => {
@@ -150,6 +215,20 @@ test.describe('DS-5 Program list filtering and display', () => {
       const list = await openProgramsList(page);
 
       await expect(list.emptyStateMessage).toBeVisible();
+    });
+
+    test('TC-007b Malformed list response renders a blank programs view with no error (DS-114)', async ({
+      page,
+    }) => {
+      await mockMalformedProgramList(page);
+      const programs = new ProgramsPage(page);
+      await programs.goto();
+
+      // DESIRED: an error state with retry. ACTUAL: authenticated shell disappears.
+      await expect(programs.heading).toHaveCount(0);
+      await expect(programs.newProgramButton).toHaveCount(0);
+      await expect(programs.navigation.dashboardButton).toHaveCount(0);
+      expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
     test('TC-009 Unauthorized user must not see program list content', async ({
@@ -312,6 +391,19 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.newProgramModal.programNameInput).toBeVisible();
     });
 
+    test('TC-021 Empty state CTA mouse click opens the new program form', async ({
+      page,
+    }) => {
+      await mockEmptyProgramList(page);
+      const list = await openProgramsList(page);
+
+      await list.createFirstProgramButton.click();
+
+      await expect(list.newProgramModal.dialog).toBeVisible();
+      await expect(list.newProgramModal.programNameInput).toBeVisible();
+      await expect(list.newProgramModal.createButton).toBeDisabled();
+    });
+
     // The Programs list renders all rows with no search box, no filter input,
     // and no pagination/load-more controls (verified against the live app), so
     // these scenarios describe functionality that does not exist yet.
@@ -320,5 +412,45 @@ test.describe('DS-5 Program list filtering and display', () => {
     test.fixme('TC-017 Search or filter by name narrows list', async () => {});
 
     test.fixme('TC-018 Filter with no matches shows zero-result copy', async () => {});
+  });
+
+  test.describe('Accessibility', () => {
+    test('TC-A-001 axe scan completes on programs page', async ({ page }) => {
+      const programs = await openProgramsList(page);
+      await expect(programs.heading).toBeVisible();
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+      expect(Array.isArray(results.violations)).toBe(true);
+    });
+
+    // App-level color-contrast defects (DS-113): sidebar Sign out 4.3:1, muted
+    // table/secondary text ~3.3:1 vs WCAG 2 AA 4.5:1. Re-enable once fixed.
+    test.fixme(
+      'TC-A-002 programs page has no wcag2a/aa violations',
+      async ({ page }, testInfo) => {
+        const programs = await openProgramsList(page);
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa'])
+          .analyze();
+
+        await testInfo.attach('axe-violations', {
+          body: JSON.stringify(results.violations, null, 2),
+          contentType: 'application/json',
+        });
+        expect(results.violations).toEqual([]);
+      },
+    );
+
+    test('TC-A-003 Actions column header has no accessible name (DS-117)', async ({
+      page,
+    }) => {
+      const programs = await openProgramsList(page);
+
+      await expect(programs.actionsColumnHeader).toBeVisible();
+      await expect(programs.actionsColumnHeader).toHaveText('');
+      expect(await programs.actionsColumnHeader.getAttribute('aria-label')).toBeNull();
+    });
   });
 });

@@ -6,6 +6,7 @@ import {
   requireApiToken,
   submitNewProgram,
   uniqueName,
+  visibleFailureMessages,
 } from './helpers/didaxis-programs.helpers';
 
 requireApiToken('DS-3');
@@ -158,6 +159,8 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
 
       await expect(modal.dialog).toBeVisible();
       await expect(programs.programInList(name)).toHaveCount(0);
+      // DESIRED: error banner/toast (DS-116). ACTUAL: silent failure in modal.
+      expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
     test('TC-010 Unauthorized user must not create a program', async ({ browser }) => {

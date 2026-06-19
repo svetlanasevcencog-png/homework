@@ -1,0 +1,9 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "isolated": true,
+    "contextOptions": {
+      "storageState": "playwright/.auth/user.json"
+    }
+  }
+}

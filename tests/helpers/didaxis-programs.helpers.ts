@@ -168,6 +168,17 @@ export async function clickDeleteWithDialog(
   return clickDeleteButtonWithDialog(page, programs.deleteButtonFor(programName), action);
 }
 
+/** Collect user-visible failure copy from alert/status/toast surfaces. */
+export async function visibleFailureMessages(page: Page): Promise<string[]> {
+  const scoped = page
+    .getByRole('alert')
+    .or(page.getByRole('status'))
+    .or(page.locator('[data-testid*="error"], [class*="toast"]'));
+
+  const texts = await scoped.allTextContents();
+  return [...new Set(texts.map((text) => text.trim()).filter(Boolean))];
+}
+
 /** Intercept the program list endpoint and return an empty collection so the
  * empty-state UI can be exercised without mutating real account data. */
 export async function mockEmptyProgramList(page: Page): Promise<void> {
@@ -177,6 +188,22 @@ export async function mockEmptyProgramList(page: Page): Promise<void> {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ data: [] }),
+      });
+    } else {
+      await route.continue();
+    }
+  });
+}
+
+/** Return syntactically invalid JSON for GET /api/programs to probe client
+ * resilience when the list payload cannot be parsed. */
+export async function mockMalformedProgramList(page: Page): Promise<void> {
+  await page.route('**/api/programs**', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{not-json',
       });
     } else {
       await route.continue();

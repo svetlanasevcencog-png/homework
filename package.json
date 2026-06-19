@@ -6,6 +6,8 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:report": "playwright show-report",
+    "mcp:playwright": "node scripts/start-playwright-mcp.mjs",
+    "mcp:playwright:install": "npx -y @playwright/mcp@latest install-browser chromium",
     "cy:open": "cypress open",
     "cy:run": "cypress run"
   },

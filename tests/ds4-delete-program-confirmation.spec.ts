@@ -8,6 +8,7 @@ import {
   failProgramApi,
   requireApiToken,
   uniqueName,
+  visibleFailureMessages,
 } from './helpers/didaxis-programs.helpers';
 
 requireApiToken('DS-4');
@@ -150,6 +151,8 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toBeVisible();
       await page.reload();
       await expect(programs.programInList(name)).toBeVisible();
+      // DESIRED: error banner/toast (DS-116). ACTUAL: silent failure after confirm.
+      expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
     test('TC-009 Program must not disappear before successful server acknowledgment', async ({

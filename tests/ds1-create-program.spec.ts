@@ -2,6 +2,7 @@ import { test, expect } from '../fixtures/cleanup.fixture';
 import { ProgramsPage } from '../pages/programs.page';
 import {
   openNewProgramForm,
+  openProgramsList,
   requireApiToken,
   trackProgramByName,
   uniqueName,
@@ -25,6 +26,23 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.descriptionInput).toBeEnabled();
       await expect(modal.createButton).toBeVisible();
       await expect(modal.createButton).toBeDisabled();
+    });
+
+    test('TC-001b New Program modal shows all program detail fields', async ({ page }) => {
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await expect(modal.dialog).toBeVisible();
+      await expect(modal.programNameInput).toBeVisible();
+      await expect(modal.descriptionInput).toBeVisible();
+      await expect(modal.totalProgramHoursInput).toBeVisible();
+      await expect(modal.defaultSessionHoursInput).toBeVisible();
+      await expect(modal.defaultExamHoursInput).toBeVisible();
+      await expect(modal.targetAudienceInput).toBeVisible();
+      await expect(modal.focusAreasInput).toBeVisible();
+      await expect(modal.showAiConfigButton).toBeVisible();
+      await expect(modal.cancelButton).toBeVisible();
+      await expect(modal.createButton).toBeVisible();
     });
 
     test('TC-002 Opening the form reveals an interactive Program Name field', async ({
@@ -87,6 +105,15 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
       await modal.fillProgramName('W');
       await expect(modal.createButton).toBeEnabled();
+    });
+
+    test('TC-005b New-program button is keyboard operable', async ({ page }) => {
+      const programs = await openProgramsList(page);
+
+      await programs.newProgramButton.focus();
+      await expect(programs.newProgramButton).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(programs.newProgramModal.dialog).toBeVisible();
     });
 
     test('TC-006 Description is optional', async ({ page, request, trackProgram }) => {
@@ -162,6 +189,48 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.programNameInput).toHaveValue(draftName);
       await expect(modal.descriptionInput).toHaveValue(draftDescription);
       await expect(modal.createButton).toBeEnabled();
+    });
+
+    test('TC-N-005 Cancel dismisses New Program modal without saving', async ({ page }) => {
+      const name = uniqueName('Cancelled Draft');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.fillProgramName(name);
+      await modal.cancel();
+
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toHaveCount(0);
+    });
+
+    test('TC-N-006 Invalid Total Program Hours closes modal without creating or explaining (DS-115)', async ({
+      page,
+    }) => {
+      const name = uniqueName('Hours Alpha');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.fillProgramName(name);
+      await modal.totalProgramHoursInput.fill('abc');
+      await modal.submit();
+      await expect(modal.programNameInput).toBeHidden();
+
+      await expect(programs.programInList(name)).toHaveCount(0);
+    });
+
+    test('TC-N-007 Negative Total Program Hours is rejected silently on submit (DS-115)', async ({
+      page,
+    }) => {
+      const name = uniqueName('Hours Beta');
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.fillProgramName(name);
+      await modal.totalProgramHoursInput.fill('-5');
+      await modal.submit();
+      await expect(modal.programNameInput).toBeHidden();
+
+      await expect(programs.programInList(name)).toHaveCount(0);
     });
   });
 

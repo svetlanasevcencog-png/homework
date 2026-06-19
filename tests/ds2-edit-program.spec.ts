@@ -6,6 +6,7 @@ import {
   openEditForProgram,
   requireApiToken,
   uniqueName,
+  visibleFailureMessages,
 } from './helpers/didaxis-programs.helpers';
 
 requireApiToken('DS-2');
@@ -28,6 +29,29 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(modal.descriptionInput).toHaveValue(description);
       await expect(modal.saveButton).toBeVisible();
       await expect(modal.cancelButton).toBeVisible();
+    });
+
+    test('TC-001b Edit Program modal shows all program detail fields', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const name = uniqueName('Edit Shell Fields');
+      await createProgram(page, request, trackProgram, name);
+      const programs = await openEditForProgram(page, name);
+      const modal = programs.editProgramModal;
+
+      await expect(modal.dialog).toBeVisible();
+      await expect(modal.programNameInput).toBeVisible();
+      await expect(modal.descriptionInput).toBeVisible();
+      await expect(modal.totalProgramHoursInput).toBeVisible();
+      await expect(modal.defaultSessionHoursInput).toBeVisible();
+      await expect(modal.defaultExamHoursInput).toBeVisible();
+      await expect(modal.targetAudienceInput).toBeVisible();
+      await expect(modal.focusAreasInput).toBeVisible();
+      await expect(modal.showAiConfigButton).toBeVisible();
+      await expect(modal.cancelButton).toBeVisible();
+      await expect(modal.saveButton).toBeVisible();
     });
 
     test('TC-002 Updated program name appears in the list after Save and modal closes', async ({
@@ -186,6 +210,27 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.editProgramModal.programNameInput).toHaveValue(original);
     });
 
+    test('TC-022 Escape discards unsaved edits when Save would be enabled', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const original = uniqueName('Web Development');
+      const discarded = `${original} - Escape Discarded`;
+
+      await createProgram(page, request, trackProgram, original);
+      const programs = await openEditForProgram(page, original);
+      const modal = programs.editProgramModal;
+
+      await modal.fillProgramName(discarded);
+      await expect(modal.saveButton).toBeEnabled();
+      await page.keyboard.press('Escape');
+
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(original)).toBeVisible();
+      await expect(programs.programInList(discarded)).toHaveCount(0);
+    });
+
     test('TC-006 Program list must not show a new name if save fails', async ({
       page,
       request,
@@ -224,6 +269,8 @@ test.describe('DS-2 Edit existing program details', () => {
       // The modal must stay open so the user can correct and retry.
       await expect(modal.dialog).toBeVisible();
       await expect(modal.programNameInput).toBeVisible();
+      // DESIRED: error banner/toast (DS-116). ACTUAL: silent failure in modal.
+      expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
     test('TC-009 Unauthorized user must not open edit or save changes', async ({
@@ -432,6 +479,31 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(modal.programNameInput).toBeHidden();
       await expect(programs.programInList(updated)).toHaveCount(1);
       await expect(programs.programInList(original)).toHaveCount(0);
+    });
+
+    test('TC-023 Edit modal fields and Save are keyboard reachable', async ({
+      page,
+      request,
+      trackProgram,
+    }) => {
+      const name = uniqueName('Keyboard Edit');
+      await createProgram(page, request, trackProgram, name);
+      const programs = await openEditForProgram(page, name);
+      const modal = programs.editProgramModal;
+
+      await modal.programNameInput.focus();
+      await expect(modal.programNameInput).toBeFocused();
+
+      await page.keyboard.press('Tab');
+      await expect(modal.descriptionInput).toBeFocused();
+
+      await modal.fillDescription('Updated via keyboard path');
+      await modal.saveButton.focus();
+      await expect(modal.saveButton).toBeFocused();
+      await page.keyboard.press('Enter');
+
+      await expect(modal.programNameInput).toBeHidden();
+      await expect(programs.programInList(name)).toBeVisible();
     });
   });
 });

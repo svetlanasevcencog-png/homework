@@ -9,6 +9,8 @@ export class ProgramsPage extends BasePage {
   readonly programsTable: Locator;
   readonly newProgramButton: Locator;
   readonly programColumnHeader: Locator;
+  readonly tableColumnHeaders: Locator;
+  readonly actionsColumnHeader: Locator;
   readonly createFirstProgramButton: Locator;
   readonly emptyStateMessage: Locator;
   readonly navigation: AppNavigation;
@@ -23,6 +25,8 @@ export class ProgramsPage extends BasePage {
     this.programColumnHeader = page.getByRole('columnheader', {
       name: 'Program',
     });
+    this.tableColumnHeaders = page.getByRole('columnheader');
+    this.actionsColumnHeader = page.getByRole('columnheader').nth(1);
     this.createFirstProgramButton = page.getByRole('button', {
       name: 'Create Program',
     });
