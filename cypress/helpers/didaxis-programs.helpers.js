@@ -13,7 +13,9 @@ function requireCredentials() {
 }
 
 function uniqueName(prefix) {
-  return `${prefix} ${Date.now()}`;
+  // Add a random segment so parallel/fast CI runs cannot collide on Date.now().
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return prefix ? `${prefix} ${suffix}` : suffix;
 }
 
 function ensureLoggedIn() {

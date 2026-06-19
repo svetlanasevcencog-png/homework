@@ -12,6 +12,10 @@ module.exports = defineConfig({
     viewportHeight: 720,
     video: false,
     screenshotOnRunFailure: true,
+    // The shared Didaxis backend renders slowly under CI load, so the modal
+    // open animation and list refresh routinely exceed the 4s default. Mirror
+    // the Playwright config's 10s expect timeout to remove false-negative flakes.
+    defaultCommandTimeout: 10_000,
     retries: { runMode: 1, openMode: 0 },
     env: {
       ...process.env,

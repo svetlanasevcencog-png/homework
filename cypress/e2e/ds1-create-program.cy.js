@@ -51,7 +51,7 @@ describe('DS-1 Create new academic program', () => {
       modal.programNameInput().should('be.visible');
       modal.descriptionInput().should('be.visible');
       modal.showAiConfigButton().should('be.visible');
-      modal.hideAiConfigButton().should('not.be.visible');
+      modal.hideAiConfigButton().should('not.exist');
       modal.createButton().should('be.visible').and('be.disabled');
     });
 
@@ -69,7 +69,13 @@ describe('DS-1 Create new academic program', () => {
       modal.defaultExamHoursInput().should('have.value', '3');
       modal.targetAudienceInput().should('be.visible');
       modal.focusAreasInput().should('be.visible');
-      modal.dialog().contains('Sync/Async Ratio: 70% sync / 30% async').should('be.visible');
+      // The AI config panel scrolls; the ratio label sits below the fold, so
+      // bring it into the modal viewport before asserting visibility.
+      modal
+        .dialog()
+        .contains('Sync/Async Ratio: 70% sync / 30% async')
+        .scrollIntoView()
+        .should('be.visible');
     });
 
     it('TC-002 Opening the form reveals an interactive Program Name field', () => {
@@ -213,7 +219,7 @@ describe('DS-1 Create new academic program', () => {
       modal.collapseAiGenerationConfig();
 
       modal.showAiConfigButton().should('be.visible');
-      modal.hideAiConfigButton().should('not.be.visible');
+      modal.hideAiConfigButton().should('not.exist');
       modal.createButton().should('be.disabled');
     });
 
@@ -232,7 +238,8 @@ describe('DS-1 Create new academic program', () => {
     });
 
     it('TC-E-002 255-character Program Name is accepted', () => {
-      const suffix = ` ${Date.now()}`;
+      // Use collision-proof suffix (shared helper) while preserving exact length.
+      const suffix = uniqueName('');
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).to.have.length(255);
 
