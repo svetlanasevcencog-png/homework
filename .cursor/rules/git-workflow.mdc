@@ -17,6 +17,33 @@ When the user asks to commit, push, or publish work:
 3. Push the branch: `git push -u origin HEAD`
 4. Open a PR: `gh pr create`
 
+## One branch per change
+
+- **Start every new change on its own fresh branch.** Before beginning new work,
+  if the current branch is already merged (or carries unrelated work), update
+  `main` and branch off it:
+
+```bash
+git checkout main && git pull
+git checkout -b <type>/<short-slug>
+```
+
+- Do not reuse a merged branch for a new change, and do not stack unrelated
+  changes on one feature branch.
+- Use a descriptive `<type>/<short-slug>` (e.g. `feat/`, `fix/`, `chore/`).
+
+## Clean up after merge
+
+Once a branch's PR is merged into `main`:
+
+1. Switch to `main` and update it: `git checkout main && git pull`
+2. Delete the local branch: `git branch -d <branch>`
+3. Delete the remote branch: `git push origin --delete <branch>`
+   (or rely on GitHub's "delete branch on merge" if enabled).
+
+Only delete a branch after its PR is **merged** (use `git branch -d`, not `-D`,
+so Git refuses to drop unmerged work). Never delete `main`.
+
 ## Interpreting "push"
 
 - **"Push to remote"**, **"push"**, **"publish"** → push the **feature branch**, then open a PR.
