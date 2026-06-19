@@ -232,7 +232,8 @@ describe('DS-1 Create new academic program', () => {
     });
 
     it('TC-E-002 255-character Program Name is accepted', () => {
-      const suffix = ` ${Date.now()}`;
+      // Use collision-proof suffix (shared helper) while preserving exact length.
+      const suffix = uniqueName('');
       const name = 'A'.repeat(255 - suffix.length) + suffix;
       expect(name).to.have.length(255);
 
