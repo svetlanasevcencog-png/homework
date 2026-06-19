@@ -1,9 +1,9 @@
 name: QA Orchestrator (Backlog)
 
 on:
-  # Every 5 minutes. NOTE: GitHub only runs scheduled workflows from the
-  # default branch, 5 minutes is the minimum interval, and runs can be
-  # delayed or dropped under platform load.
+  # GitHub `schedule` is best-effort only — runs can be delayed 15–60+ minutes or
+  # skipped entirely under load. The `reschedule` job below chains the next run
+  # via workflow_dispatch every 5 minutes for reliable cadence.
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
@@ -17,6 +17,7 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  actions: write   # self-reschedule via workflow_dispatch (GitHub cron is best-effort)
 
 jobs:
   orchestrate:
@@ -110,3 +111,21 @@ jobs:
             exit 0
           fi
           exit "${code:-0}"
+
+  # GitHub's built-in cron is unreliable at */5. After each run (success or
+  # failure), wait 5 minutes and trigger the next run via workflow_dispatch.
+  # The concurrency group prevents overlap if cron also fires.
+  reschedule:
+    needs: orchestrate
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Wait 5 minutes then trigger next run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Sleeping 300s before chaining the next QA orchestrator run…"
+          sleep 300
+          gh workflow run qa-orchestrator.yml --ref main
+          echo "Next run queued."
