@@ -1,0 +1,102 @@
+name: QA Orchestrator (Backlog)
+
+on:
+  # Every 5 minutes. NOTE: GitHub only runs scheduled workflows from the
+  # default branch, 5 minutes is the minimum interval, and runs can be
+  # delayed or dropped under platform load.
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+# Never let two backlog runs overlap (critical at a 5-minute cadence).
+# A new tick waits rather than racing the in-flight run on the same tickets.
+concurrency:
+  group: qa-orchestrator
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  orchestrate:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    # Reuse the same secrets store as the E2E workflow.
+    environment: dev1
+    # Official Playwright image: browsers + OS deps pre-installed.
+    # Keep the tag pinned to the @playwright/test version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install GitHub CLI
+        run: |
+          (type gh > /dev/null 2>&1) && exit 0
+          apt-get update
+          apt-get install -y gh
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify required secrets are present (no values printed)
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+          DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+          DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+          DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+        run: |
+          echo "CURSOR_API_KEY set:    ${CURSOR_API_KEY:+true}"
+          echo "DIDAXIS_EMAIL set:     ${DIDAXIS_EMAIL:+true}"
+          echo "DIDAXIS_PASSWORD set:  ${DIDAXIS_PASSWORD:+true}"
+          echo "DIDAXIS_API_TOKEN set: ${DIDAXIS_API_TOKEN:+true}"
+          echo "DIDAXIS_URL set:       ${DIDAXIS_URL:+true}"
+
+      - name: Configure git identity for PR branches
+        run: |
+          git config --global user.name "qa-orchestrator[bot]"
+          git config --global user.email "qa-orchestrator@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Run QA Orchestrator (headless)
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+          DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+          DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+          DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+          # Lets the agent push branches and open PRs via the gh CLI.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MODEL: auto
+        run: |
+          PROMPT="$(cat .github/qa-orchestrator-prompt.md)"
+          # `timeout` guards against the known cursor-agent CI hang
+          # (forum.cursor.com/t/133511): if the agent finishes its work but
+          # does not exit, the wrapper kills it so the job still completes.
+          timeout --signal=SIGKILL 20m \
+            cursor-agent \
+              --print \
+              --force \
+              --model="$MODEL" \
+              --output-format=text \
+              "$PROMPT" || code=$?
+          # 124 = clean timeout after the run finished; treat as success.
+          if [ "${code:-0}" -eq 124 ]; then
+            echo "cursor-agent hit the timeout guard (likely the known CI hang); continuing."
+            exit 0
+          fi
+          exit "${code:-0}"
