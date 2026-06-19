@@ -32,11 +32,17 @@ alwaysApply: false
 
 ## Skills
 
-- `jira-ticket-analyzer` — the coordinator owns "analyze"
+- `jira-ticket-analyzer` — the coordinator owns "analyze" when a ticket exists
+- `explore-and-generate` — ticket-less coverage discovery; read-only UI
+  exploration that outputs a Gherkin plan for `test-writer` (do NOT use when a
+  ticket/acceptance criteria already exist)
 
 ## Routing
 
-- **Ticket given** → analyze → save plan to `features/<ticket-key>.feature.md`
+- **Ticket given** → analyze with `jira-ticket-analyzer` → save plan to
+  `features/<ticket-key>.feature.md` → **STOP: human reviews the plan**
+- **No ticket; coverage gap requested** → run `explore-and-generate`
+  (read-only) → save plan to `features/explore-<page>-<flow>.feature.md`
   → **STOP: human reviews the plan**
 - **Plan approved** → delegate to `test-writer`
 - **Spec returned** → run: `npx playwright test tests/<ticket-spec>`
@@ -44,6 +50,62 @@ alwaysApply: false
 - **Real app bug** → **STOP: human confirms** → delegate to `bug-reporter`
 - **Test issue** → delegate to `test-writer` (propose fix, human OKs)
 
+## Backlog mode
+
+Work a queue of tickets instead of a single one. The coordinator never decides
+when to start — an external trigger wires it up and hands it the queue.
+
+**Trigger (external, not the agent's choice):** all DS tickets in status
+"In Progress" that do **not** already carry the `tests-generated` label. The run
+is kicked off by one of:
+
+- a **Cursor Automation** (scheduled/recurring),
+- a **headless agent** run (`cursor-agent -p "..."` / `--print`), or
+- a **local batch** script.
+
+The agent only executes once invoked; it must not self-schedule or start on its
+own initiative.
+
+**Queue build:** query Jira for `status = "In Progress" AND project = DS` minus
+any ticket with the `tests-generated` label. Order by ticket key (oldest first).
+
+**Budget:** process **at most 5 tickets per run**. If more qualify, leave them
+for the next run — do not exceed the cap.
+
+**Per ticket** (run the single-ticket Routing flow for each):
+
+1. **analyze** — `jira-ticket-analyzer` → save plan to
+   `features/<ticket-key>.feature.md`.
+2. **test-writer** — delegate to generate the spec from the plan.
+3. **run** — `npx playwright test tests/<ticket-spec>`.
+4. **triage on red** — if the run is red, delegate to `triage`; follow the
+   normal red-build routing (bug vs test issue).
+
+**Output per ticket:**
+
+- Open **one PR per ticket** containing that ticket's spec (and any POM/data
+  changes). One ticket = one PR; do not bundle multiple tickets into a PR.
+- **Link the ticket** in the PR (reference the DS key in the title/body).
+- Add the **`tests-generated`** label to the ticket so the next run's queue
+  skips it.
+
+**Stop conditions / move on:**
+
+- If a spec fails with the **same identical failure twice**, stop on that ticket
+  and **move on** to the next in the queue (record why, leave it unlabeled so a
+  human can revisit). Honor the Loop guard: never re-run an identical failing
+  spec more than twice.
+- Stop the whole run once 5 tickets are processed.
+
+**Hard limits:** **Never merge or close a PR or ticket without a human.** All
+the standard Guardrails apply per ticket — a human approves any merge and any
+bug before it's filed.
+
 ## Done
 
 The suite is green for the ticket, or a bug is filed and linked.
+
+In Backlog mode: each processed ticket has one PR (ticket linked, spec
+committed) and the `tests-generated` label, up to the 5-ticket budget; skipped
+or stopped tickets are reported for human follow-up. No PR or ticket is merged
+or closed without a human.
