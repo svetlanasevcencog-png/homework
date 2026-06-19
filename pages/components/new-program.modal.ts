@@ -10,6 +10,9 @@ export class NewProgramModal {
   readonly targetAudienceInput: Locator;
   readonly focusAreasInput: Locator;
   readonly showAiConfigButton: Locator;
+  readonly hideAiConfigButton: Locator;
+  readonly aiConfigRequiredHint: Locator;
+  readonly syncAsyncRatioLabel: Locator;
   readonly cancelButton: Locator;
   readonly createButton: Locator;
 
@@ -25,6 +28,15 @@ export class NewProgramModal {
     this.showAiConfigButton = this.dialog.getByRole('button', {
       name: /Show AI Generation Config/i,
     });
+    this.hideAiConfigButton = this.dialog.getByRole('button', {
+      name: /Hide AI Generation Config/i,
+    });
+    this.aiConfigRequiredHint = this.dialog.getByText(
+      'Required for AI curriculum generation',
+    );
+    this.syncAsyncRatioLabel = this.dialog.getByText(
+      'Sync/Async Ratio: 70% sync / 30% async',
+    );
     this.cancelButton = this.dialog.getByRole('button', { name: 'Cancel' });
     this.createButton = this.dialog.getByRole('button', {
       name: 'Create',
@@ -46,6 +58,16 @@ export class NewProgramModal {
 
   async cancel() {
     await this.cancelButton.click();
+  }
+
+  async expandAiGenerationConfig() {
+    await this.showAiConfigButton.click();
+    await this.hideAiConfigButton.waitFor({ state: 'visible' });
+  }
+
+  async collapseAiGenerationConfig() {
+    await this.hideAiConfigButton.click();
+    await this.showAiConfigButton.waitFor({ state: 'visible' });
   }
 
   async create(name: string, description?: string) {

@@ -41,6 +41,37 @@ describe('DS-1 Create new academic program', () => {
       modal.createButton().should('be.visible').and('be.disabled');
     });
 
+    it('TC-001b New Program modal hides AI config fields until expanded', () => {
+      const programs = visitPrograms();
+      const modal = programs.newProgramModal;
+
+      programs.openNewProgram();
+
+      modal.dialog().should('be.visible');
+      modal.programNameInput().should('be.visible');
+      modal.descriptionInput().should('be.visible');
+      modal.showAiConfigButton().should('be.visible');
+      modal.hideAiConfigButton().should('not.be.visible');
+      modal.createButton().should('be.visible').and('be.disabled');
+    });
+
+    it('TC-001c Expanding AI Generation Config reveals scheduling and audience fields', () => {
+      const programs = visitPrograms();
+      const modal = programs.newProgramModal;
+
+      programs.openNewProgram();
+      modal.expandAiGenerationConfig();
+
+      modal.dialog().should('be.visible');
+      modal.totalProgramHoursInput().should('be.visible');
+      modal.dialog().contains('Required for AI curriculum generation').should('be.visible');
+      modal.defaultSessionHoursInput().should('have.value', '4');
+      modal.defaultExamHoursInput().should('have.value', '3');
+      modal.targetAudienceInput().should('be.visible');
+      modal.focusAreasInput().should('be.visible');
+      modal.dialog().contains('Sync/Async Ratio: 70% sync / 30% async').should('be.visible');
+    });
+
     it('TC-002 Opening the form reveals an interactive Program Name field', () => {
       // Verified app behavior: focus lands on the modal close button, not on the
       // Program Name field. We assert that the field is reachable and editable,
@@ -173,6 +204,19 @@ describe('DS-1 Create new academic program', () => {
   /* Edge cases                                                          */
   /* ------------------------------------------------------------------ */
   context('Edge cases', () => {
+    it('TC-E-008 Hiding AI Generation Config collapses the extended fields', () => {
+      const programs = visitPrograms();
+      const modal = programs.newProgramModal;
+
+      programs.openNewProgram();
+      modal.expandAiGenerationConfig();
+      modal.collapseAiGenerationConfig();
+
+      modal.showAiConfigButton().should('be.visible');
+      modal.hideAiConfigButton().should('not.be.visible');
+      modal.createButton().should('be.disabled');
+    });
+
     it('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', () => {
       const trimmed = uniqueName('Trim Test');
       const padded = `   ${trimmed}   `;

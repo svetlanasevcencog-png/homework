@@ -13,6 +13,50 @@ class NewProgramModal {
     return this.dialog().contains('label', 'Description').parent().find('input, textarea');
   }
 
+  totalProgramHoursInput() {
+    return this.dialog().contains('label', 'Total Program Hours').parent().find('input, textarea');
+  }
+
+  defaultSessionHoursInput() {
+    return this.dialog()
+      .contains('label', 'Default Session Hours')
+      .parent()
+      .find('input, textarea');
+  }
+
+  defaultExamHoursInput() {
+    return this.dialog()
+      .contains('label', 'Default Exam Hours')
+      .parent()
+      .find('input, textarea');
+  }
+
+  targetAudienceInput() {
+    return this.dialog().contains('label', 'Target Audience').parent().find('input, textarea');
+  }
+
+  focusAreasInput() {
+    return this.dialog().contains('label', 'Focus Areas').parent().find('input, textarea');
+  }
+
+  showAiConfigButton() {
+    return this.dialog().contains('button', 'Show AI Generation Config');
+  }
+
+  hideAiConfigButton() {
+    return this.dialog().contains('button', 'Hide AI Generation Config');
+  }
+
+  expandAiGenerationConfig() {
+    this.showAiConfigButton().click();
+    this.hideAiConfigButton().should('be.visible');
+  }
+
+  collapseAiGenerationConfig() {
+    this.hideAiConfigButton().click();
+    this.showAiConfigButton().should('be.visible');
+  }
+
   cancelButton() {
     return this.dialog().contains('button', 'Cancel');
   }

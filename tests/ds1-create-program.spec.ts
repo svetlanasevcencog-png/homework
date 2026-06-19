@@ -28,21 +28,37 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-001b New Program modal shows all program detail fields', async ({ page }) => {
+    test('TC-001b New Program modal hides AI config fields until expanded', async ({
+      page,
+    }) => {
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
       await expect(modal.dialog).toBeVisible();
       await expect(modal.programNameInput).toBeVisible();
       await expect(modal.descriptionInput).toBeVisible();
-      await expect(modal.totalProgramHoursInput).toBeVisible();
-      await expect(modal.defaultSessionHoursInput).toBeVisible();
-      await expect(modal.defaultExamHoursInput).toBeVisible();
-      await expect(modal.targetAudienceInput).toBeVisible();
-      await expect(modal.focusAreasInput).toBeVisible();
       await expect(modal.showAiConfigButton).toBeVisible();
+      await expect(modal.hideAiConfigButton).toBeHidden();
       await expect(modal.cancelButton).toBeVisible();
       await expect(modal.createButton).toBeVisible();
+    });
+
+    test('TC-001c Expanding AI Generation Config reveals scheduling and audience fields', async ({
+      page,
+    }) => {
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.expandAiGenerationConfig();
+
+      await expect(modal.dialog).toBeVisible();
+      await expect(modal.totalProgramHoursInput).toBeVisible();
+      await expect(modal.aiConfigRequiredHint).toBeVisible();
+      await expect(modal.defaultSessionHoursInput).toHaveValue('4');
+      await expect(modal.defaultExamHoursInput).toHaveValue('3');
+      await expect(modal.targetAudienceInput).toBeVisible();
+      await expect(modal.focusAreasInput).toBeVisible();
+      await expect(modal.syncAsyncRatioLabel).toBeVisible();
     });
 
     test('TC-002 Opening the form reveals an interactive Program Name field', async ({
@@ -235,6 +251,20 @@ test.describe('DS-1 Create new academic program', () => {
   });
 
   test.describe('Edge cases', () => {
+    test('TC-E-008 Hiding AI Generation Config collapses the extended fields', async ({
+      page,
+    }) => {
+      const programs = await openNewProgramForm(page);
+      const modal = programs.newProgramModal;
+
+      await modal.expandAiGenerationConfig();
+      await modal.collapseAiGenerationConfig();
+
+      await expect(modal.showAiConfigButton).toBeVisible();
+      await expect(modal.hideAiConfigButton).toBeHidden();
+      await expect(modal.createButton).toBeDisabled();
+    });
+
     test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', async ({
       page,
       request,
