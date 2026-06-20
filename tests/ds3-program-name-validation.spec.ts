@@ -5,6 +5,7 @@ import {
   openNewProgramForm,
   requireApiToken,
   submitNewProgram,
+  trackProgramByName,
   uniqueName,
   visibleFailureMessages,
 } from './helpers/didaxis-programs.helpers';
@@ -56,7 +57,9 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       expect(name).toHaveLength(255);
 
       const programs = await openNewProgramForm(page);
-      await programs.newProgramModal.fillProgramName(name);
+      const modal = programs.newProgramModal;
+      await modal.fillProgramName(name);
+      await modal.fillDescription('Valid description at maximum name length');
       await submitNewProgram(programs, request, trackProgram, name);
 
       await expect(programs.programInList(name)).toBeVisible();
@@ -172,7 +175,10 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
     test('TC-011 Name one character over maximum is rejected or blocked', async ({
       page,
     }) => {
-      const tooLong = `${'B'.repeat(256)}${uniqueName('')}`;
+      const suffix = uniqueName('');
+      const tooLong = 'B'.repeat(256 - suffix.length) + suffix;
+      expect(tooLong).toHaveLength(256);
+
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
@@ -328,6 +334,21 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
 
     // Known defect SS-26: a rapid double-click on Create submits twice and
     // creates two programs. Keep deferred until the app de-bounces the submit.
-    test.fixme('TC-018 Rapid double-click on Create does not create two programs', async () => {});
+    test.fixme(
+      'TC-018 Rapid double-click on Create does not create two programs',
+      async ({ page, request, trackProgram }) => {
+        const name = uniqueName('Rapid Double Click 2026');
+        const programs = await openNewProgramForm(page);
+        const modal = programs.newProgramModal;
+
+        await modal.fillProgramName(name);
+        await modal.fillDescription('Valid description');
+        await modal.createButton.dblclick();
+
+        await expect(modal.programNameInput).toBeHidden();
+        await expect(programs.programInList(name)).toHaveCount(1);
+        await trackProgramByName(request, trackProgram, name);
+      },
+    );
   });
 });
