@@ -2,6 +2,9 @@
   "mcpServers": {
     "playwright": {
       "url": "http://localhost:8931/mcp"
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
     }
   }
 }
