@@ -15,7 +15,8 @@ alwaysApply: false
 
 ## Guardrails
 
-- A human approves any merge and any bug before it's filed.
+- A human approves any merge before it lands.
+- Search Jira before filing — never create a duplicate bug.
 - Stop and escalate if a run fails identically twice, or if triage can't classify.
 
 ## Loop guard
@@ -25,8 +26,9 @@ alwaysApply: false
 
 ## Tools
 
-- Atlassian MCP — read ticket
-- GitHub MCP or `gh` — read runs
+- Atlassian MCP — read ticket; search and file bugs (local/interactive runs)
+- Jira REST API — search and file bugs (headless CI runs; see `.github/qa-orchestrator-prompt.md`)
+- GitHub MCP or `gh` — read runs; open/update PRs
 - Terminal — `npx playwright test`
 - Delegate to specialist agents (`test-writer`, `triage`, `bug-reporter`)
 
@@ -36,6 +38,7 @@ alwaysApply: false
 - `explore-and-generate` — ticket-less coverage discovery; read-only UI
   exploration that outputs a Gherkin plan for `test-writer` (do NOT use when a
   ticket/acceptance criteria already exist)
+- `jira-bug-reporter` — format and file suspected defects in Jira
 
 ## Routing
 
@@ -47,8 +50,22 @@ alwaysApply: false
 - **Plan approved** → delegate to `test-writer`
 - **Spec returned** → run: `npx playwright test tests/<ticket-spec>`
 - **Run is red** → delegate to `triage`
-- **Real app bug** → **STOP: human confirms** → delegate to `bug-reporter`
+- **Real app bug** → **log suspected defect in Jira** (search first, then file or reference); delegate to `bug-reporter` when MCP is available
 - **Test issue** → delegate to `test-writer` (propose fix, human OKs)
+
+## Suspected defect handling
+
+When triage classifies a real app bug, or a spec quarantines wrong app behaviour
+with `test.fixme`:
+
+1. Apply `jira-bug-reporter` to draft the report.
+2. **Search Jira** (project DS, issuetype Bug) for an existing ticket with the
+   same page, control, and wrong behaviour.
+3. **Match found** → reference the bug key in the PR (**Known defects**) and in
+   `test.fixme` comments; comment on the story if needed.
+4. **No match** → **file the bug** (REST in CI, MCP or `bug-reporter` locally),
+   link it to the story with **Relates**, comment on the story, reference in PR
+   and tests.
 
 ## Backlog mode
 
@@ -80,12 +97,15 @@ for the next run — do not exceed the cap.
 3. **run** — `npx playwright test tests/<ticket-spec>`.
 4. **triage on red** — if the run is red, delegate to `triage`; follow the
    normal red-build routing (bug vs test issue).
+5. **suspected defect** — if a real app defect is found, log it in Jira per
+   Suspected defect handling above.
 
 **Output per ticket:**
 
 - Open **one PR per ticket** containing that ticket's spec (and any POM/data
   changes). One ticket = one PR; do not bundle multiple tickets into a PR.
 - **Link the ticket** in the PR (reference the DS key in the title/body).
+- Include **Known defects** in the PR body when bugs were found or filed.
 - Add the **`tests-generated`** label to the ticket so the next run's queue
   skips it.
 
@@ -97,13 +117,13 @@ for the next run — do not exceed the cap.
   spec more than twice.
 - Stop the whole run once 5 tickets are processed.
 
-**Hard limits:** **Never merge or close a PR or ticket without a human.** All
-the standard Guardrails apply per ticket — a human approves any merge and any
-bug before it's filed.
+**Hard limits:** **Never merge or close a PR or ticket without a human.**
 
 ## Done
 
-The suite is green for the ticket, or a bug is filed and linked.
+The suite is green for the ticket (or failing scenarios are quarantined with
+`test.fixme`), tests are in a PR, `tests-generated` is applied, and any app
+defect is logged or linked in Jira.
 
 In Backlog mode: each processed ticket has one PR (ticket linked, spec
 committed) and the `tests-generated` label, up to the 5-ticket budget; skipped
