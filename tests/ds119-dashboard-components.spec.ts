@@ -97,8 +97,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expectDashboardBlocksVisible(dashboard);
     });
 
-    // Dashboard cards are clickable divs without tabindex or button/link role;
-    // keyboard activation is not supported until the app adds focus semantics.
+    // Blocked by DS-121 — cards are clickable divs without tabindex or button/link role.
     test.fixme(
       'Each dashboard card is keyboard-focusable and activatable',
       async ({ page }) => {
