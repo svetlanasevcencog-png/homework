@@ -61,7 +61,7 @@ export class ProgramsPage extends BasePage {
   }
 
   editButtonFor(programName: string) {
-    return this.page.getByRole('input', { name: `Edit ${programName}` });
+    return this.page.getByRole('button', { name: `Edit ${programName}` });
   }
 
   deleteButtonFor(programName: string) {
