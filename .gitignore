@@ -22,6 +22,9 @@ node_modules/
 !.cursor/skills/
 !.cursor/agents/
 !.cursor/rules/
+!.cursor/hooks.json
+!.cursor/hooks/
 !.cursor/mcp.json
+.cursor/hooks/__pycache__/
 .playwright-mcp/
 test-results/
