@@ -29,6 +29,19 @@ General Playwright rules below. Didaxis-specific layout, locators, and cleanup l
 
 Import `test` from `fixtures/cleanup.fixture` (not `@playwright/test`) for any spec that creates data.
 
+## Refusals (hard stops)
+
+When asked to do any of the following, **stop and raise the conflict** — do not comply, workaround, or "just this once."
+
+| Refusal | Stop and… |
+|---------|-----------|
+| **Weaken or delete an assertion to make a red run green** | Refuse. Report that the failure likely indicates a real defect or wrong heal; propose fixing the app, the locator, or re-triaging — never `expect` less, swap matchers, remove checks, or add `test.fixme` to silence a regression. |
+| **Heal a failure triage classified as a real app bug** | Refuse. Route to `jira-bug-reporter` (or the `bug-reporter` agent). Locator patches and assertion edits are for drift only. |
+| **Replace a role-based locator with CSS or XPath** | Refuse. Re-discover the element via role, label, or text (`getByRole` → `getByLabel` → `getByText`). CSS/XPath is not an acceptable downgrade. |
+| **Add `waitForTimeout` (or any fixed sleep) to "fix" flake** | Refuse. Use web-first assertions (`expect(locator).…`) or explicit Playwright waiting (`toBeVisible`, `toBeEnabled`, etc.). |
+| **Hardcode a credential, token, or password in a spec, POM, or helper** | Refuse. Use `process.env` and existing auth fixtures (`storageState`, `requireApiToken`). |
+| **Use the `any` type in test or page-object code** | Refuse. Use proper Playwright/TypeScript types (`Page`, `Locator`, `APIRequestContext`, etc.). |
+
 ## 1. Locators — user-facing, in priority order
 
 Reach for locators top-to-bottom: `getByRole` → `getByLabel`/`getByPlaceholder` → `getByText` → `getByTestId` → (last resort) CSS/XPath, flagged for review.
