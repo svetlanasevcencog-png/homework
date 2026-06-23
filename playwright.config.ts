@@ -8,7 +8,7 @@ import {
 
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-const didaxisSpecPattern = /ds\d-.*\.spec\.ts/;
+const didaxisSpecPattern = /ds\d+-.*\.spec\.ts/;
 const loginPageSpecPattern = /login-page\.spec\.ts/;
 const demoSpecIgnore = [
   /.*\.setup\.ts/,
