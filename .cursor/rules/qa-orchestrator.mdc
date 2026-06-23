@@ -22,6 +22,7 @@ alwaysApply: false
 ## Loop guard
 
 - At most 5 delegations per task.
+- At most **5 self-heals per run** (see Heal on red).
 - Never re-run an identical failing spec more than twice.
 
 ## Tools
@@ -30,6 +31,7 @@ alwaysApply: false
 - Jira REST API — search and file bugs (headless CI runs; see `.github/qa-orchestrator-prompt.md`)
 - GitHub MCP or `gh` — read runs; open/update PRs
 - Terminal — `npx playwright test`
+- Playwright MCP — re-discover locators via a11y tree during self-heal
 - Delegate to specialist agents (`test-writer`, `triage`, `bug-reporter`)
 
 ## Skills
@@ -38,6 +40,10 @@ alwaysApply: false
 - `explore-and-generate` — ticket-less coverage discovery; read-only UI
   exploration that outputs a Gherkin plan for `test-writer` (do NOT use when a
   ticket/acceptance criteria already exist)
+- `ci-failure-triage` — classify a red run: real app bug vs test issue (drift)
+- `self-heal` — repair locator drift in POMs after triage confirms test issue;
+  re-discover via Playwright MCP, patch POM, re-run green with assertions
+  unchanged; one locator repair per heal
 - `jira-bug-reporter` — format and file suspected defects in Jira
 
 ## Routing
@@ -49,9 +55,46 @@ alwaysApply: false
   → **STOP: human reviews the plan**
 - **Plan approved** → delegate to `test-writer`
 - **Spec returned** → run: `npx playwright test tests/<ticket-spec>`
-- **Run is red** → delegate to `triage`
-- **Real app bug** → **log suspected defect in Jira** (search first, then file or reference); delegate to `bug-reporter` when MCP is available
-- **Test issue** → delegate to `test-writer` (propose fix, human OKs)
+- **Run is red** → delegate to `triage` (apply `ci-failure-triage`)
+- **Real app bug** → **log suspected defect in Jira** (search first, then file or reference); delegate to `bug-reporter` when MCP is available — **never heal**
+- **Test issue (drift)** → apply `self-heal` (see Heal on red); if not drift, delegate to `test-writer` (propose fix, human OKs)
+
+## Heal on red
+
+When a run is red, the coordinator **always triages first** — never heal without
+classification.
+
+### Flow
+
+1. **Triage** — delegate to `triage` (skill: `ci-failure-triage`). Pull logs and
+   the playwright-report artifact; classify **real app bug** vs **test issue
+   (drift)**.
+2. **Real app bug** → delegate to `bug-reporter` (skill: `jira-bug-reporter`).
+   File or link the bug to the run. **Do not heal.**
+3. **Test issue (drift)** → apply `self-heal`:
+   - Re-discover the element via the **Playwright MCP** a11y tree
+     (`browser_snapshot`).
+   - Patch the **POM only** — minimal role-based locator diff in `pages/`.
+   - Re-run the failing spec to **prove green with assertions unchanged**.
+   - Open a **repair PR** on `fix/self-heal-<short-slug>`, linked to the failed
+     run id and triage diagnosis.
+4. **Inconclusive triage** → stop and escalate (see Guardrails).
+
+### Heal rules
+
+- **Never heal an assertion.** Spec diffs must be empty — no changed, removed,
+  or commented `expect(...)`. The `.cursor/hooks/guard-test-assertions` hook
+  blocks weakened assertions on edit.
+- **Never heal a real app bug.** If the app behaviour is wrong, route to
+  `bug-reporter` — not self-heal.
+- **Never merge a repair PR without a human.** Open the PR; a human approves
+  merge.
+- **Stop and escalate** if a heal cannot prove green without touching assertions,
+  if the element is absent from the a11y tree, or if the **same failure** appears
+  twice after a heal attempt.
+- **Budget: at most 5 heals per run.** One locator repair per heal; do not batch
+  unrelated drift fixes. When the cap is reached, stop and report remaining
+  failures for human follow-up.
 
 ## Suspected defect handling
 
@@ -95,8 +138,8 @@ for the next run — do not exceed the cap.
    `features/<ticket-key>.feature.md`.
 2. **test-writer** — delegate to generate the spec from the plan.
 3. **run** — `npx playwright test tests/<ticket-spec>`.
-4. **triage on red** — if the run is red, delegate to `triage`; follow the
-   normal red-build routing (bug vs test issue).
+4. **triage on red** — if the run is red, delegate to `triage`; follow Heal on
+   red (self-heal for drift, bug-reporter for real defects).
 5. **suspected defect** — if a real app defect is found, log it in Jira per
    Suspected defect handling above.
 
