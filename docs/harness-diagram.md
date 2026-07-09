@@ -27,17 +27,21 @@ flowchart TB
   subgraph Skills["Skills"]
     JTA["jira-ticket-analyzer"]
     EXP["explore-and-generate"]
+    EC["exploratory-charter"]
     CFT["ci-failure-triage"]
     SH["self-heal"]
     JBR["jira-bug-reporter"]
     POM["pom-conventions"]
     API["api-cleanup"]
+    SRE["suite-reliability-eval"]
+    DEL["didaxis-program-deleter"]
   end
 
   subgraph Guardrails["Guardrails"]
+    CONST["constitution.mdc\nMUST / SHOULD / WON'T\nAgent governance"]
     HOOK["afterFileEdit hook\nguard-test-assertions\nblocks weakened expect()"]
     RULES["playwright-conventions\nRefusals / hard stops"]
-    HUMAN["Human gates\nplan review · PR merge"]
+    HUMAN["Human gates\nplan review · confidence 5–7 · PR merge"]
   end
 
   subgraph TestStack["Playwright test stack"]
@@ -93,10 +97,14 @@ flowchart TB
   SH -->|"re-run green"| E2E
   SH -->|"fix/self-heal-* PR"| GH
 
+  ORCH --> SRE
+  SRE -->|"eval-report.md"| GH
+
   TW -->|"feat/* PR"| GH
   BR -->|"bug key"| GH
 
   HOOK -.->|"blocks"| SPEC
+  CONST -.->|"Proposal + confidence gate"| TW & SH & BR
   RULES -.-> TW & SH
   HUMAN -.-> GH
 ```
@@ -191,6 +199,8 @@ flowchart TB
 | **Orchestrator** | ≤5 delegations/task · ≤5 self-heals/run · never merge without human |
 | **Triage** | Read-only — classify, never fix |
 | **Self-heal** | POM only · assertions unchanged · drift only |
+| **Constitution** | Always-on MUST / SHOULD / WON'T; details in `playwright-conventions` + skills |
+| **Agent governance** | Audit-then-edit Proposal before non-trivial edits; confidence <5 ask, 5–7 unknowns + human approval, ≥8 proceed; never invent path/enum/env/credential/message (behavioral, not hook-enforced) |
 | **Hook** | Blocks deleted/commented `expect(` in `tests/**` |
 | **Playwright rules** | Refusals: no assertion weakening, no CSS/XPath, no `waitForTimeout` |
 | **CI** | `playwright.yml`: `@smoke` on PR · `@sanity` on push · `@regression` on demand · JUnit artifact for flake scrape · `qa-orchestrator.yml` daily backlog (≤5 tickets) |
@@ -201,6 +211,7 @@ flowchart TB
 
 | Component | Path |
 |-----------|------|
+| Constitution | `.cursor/rules/constitution.mdc` |
 | Orchestrator rule | `.cursor/rules/qa-orchestrator.mdc` |
 | Playwright conventions | `.cursor/rules/playwright-conventions.mdc` |
 | Assertion guard hook | `.cursor/hooks.json`, `.cursor/hooks/guard-test-assertions.*` |
