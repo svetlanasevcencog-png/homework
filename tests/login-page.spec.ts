@@ -12,7 +12,7 @@ const EMAIL = process.env.DIDAXIS_EMAIL;
 const PASSWORD = process.env.DIDAXIS_PASSWORD;
 
 test.describe('Login page', () => {
-  test('displays sign-in form', async ({ page }) => {
+  test('displays sign-in form', { tag: '@smoke' }, async ({ page }) => {
     const login = new LoginPage(page);
     await login.goto();
 
@@ -25,7 +25,7 @@ test.describe('Login page', () => {
     await expect(login.signInButton).toBeEnabled();
   });
 
-  test('redirects unauthenticated user from programs to login', async ({
+  test('redirects unauthenticated user from programs to login', { tag: '@smoke' }, async ({
     page,
   }) => {
     const programs = new ProgramsPage(page);
@@ -37,7 +37,7 @@ test.describe('Login page', () => {
     await expect(login.signInButton).toBeVisible();
   });
 
-  test('signs in with valid admin credentials', async ({ page }) => {
+  test('signs in with valid admin credentials', { tag: '@smoke' }, async ({ page }) => {
     test.skip(
       !EMAIL || !PASSWORD,
       'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be defined in .env',

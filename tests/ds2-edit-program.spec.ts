@@ -13,7 +13,7 @@ requireApiToken('DS-2');
 
 test.describe('DS-2 Edit existing program details', () => {
   test.describe('Positive flows', () => {
-    test('TC-001 Edit form opens with current program values pre-populated', async ({
+    test('TC-001 Edit form opens with current program values pre-populated', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -31,7 +31,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(modal.cancelButton).toBeVisible();
     });
 
-    test('TC-001b Edit Program modal shows all program detail fields', async ({
+    test('TC-001b Edit Program modal shows all program detail fields', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -54,7 +54,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(modal.saveButton).toBeVisible();
     });
 
-    test('TC-002 Updated program name appears in the list after Save and modal closes', async ({
+    test('TC-002 Updated program name appears in the list after Save and modal closes', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -74,7 +74,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(original)).toHaveCount(0);
     });
 
-    test('TC-003 Saving after changing only Description leaves Name unchanged', async ({
+    test('TC-003 Saving after changing only Description leaves Name unchanged', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -100,7 +100,7 @@ test.describe('DS-2 Edit existing program details', () => {
       );
     });
 
-    test('TC-004 Name and Description can both be updated in one save', async ({
+    test('TC-004 Name and Description can both be updated in one save', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -127,7 +127,7 @@ test.describe('DS-2 Edit existing program details', () => {
       );
     });
 
-    test('TC-005 Clearing Description saves successfully when Description is optional', async ({
+    test('TC-005 Clearing Description saves successfully when Description is optional', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -150,7 +150,7 @@ test.describe('DS-2 Edit existing program details', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-007 Required Name must not be saved as empty', async ({
+    test('TC-007 Required Name must not be saved as empty', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -168,7 +168,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-021 Whitespace-only Name does not enable Save', async ({
+    test('TC-021 Whitespace-only Name does not enable Save', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -187,7 +187,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-011 Cancel discards edits and list keeps the original name', async ({
+    test('TC-011 Cancel discards edits and list keeps the original name', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -210,7 +210,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.editProgramModal.programNameInput).toHaveValue(original);
     });
 
-    test('TC-022 Escape discards unsaved edits when Save would be enabled', async ({
+    test('TC-022 Escape discards unsaved edits when Save would be enabled', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -231,7 +231,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(discarded)).toHaveCount(0);
     });
 
-    test('TC-006 Program list must not show a new name if save fails', async ({
+    test('TC-006 Program list must not show a new name if save fails', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -252,7 +252,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(original)).toHaveCount(1);
     });
 
-    test('TC-010 Modal must not close when backend rejects the save payload', async ({
+    test('TC-010 Modal must not close when backend rejects the save payload', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -273,7 +273,7 @@ test.describe('DS-2 Edit existing program details', () => {
       expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
-    test('TC-009 Unauthorized user must not open edit or save changes', async ({
+    test('TC-009 Unauthorized user must not open edit or save changes', { tag: '@regression' }, async ({
       browser,
     }) => {
       await assertGuestRedirectedToLogin(browser, '/programs');
@@ -286,7 +286,7 @@ test.describe('DS-2 Edit existing program details', () => {
   });
 
   test.describe('Edge cases', () => {
-    test('TC-012 255-character Program Name saves and displays correctly', async ({
+    test('TC-012 255-character Program Name saves and displays correctly', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -308,7 +308,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(maxName)).toBeVisible();
     });
 
-    test('TC-013 Name one character over maximum keeps Save disabled or blocks submit', async ({
+    test('TC-013 Name one character over maximum keeps Save disabled or blocks submit', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -334,7 +334,7 @@ test.describe('DS-2 Edit existing program details', () => {
       }).toPass();
     });
 
-    test('TC-014 Long Description (2000 characters) is accepted', async ({
+    test('TC-014 Long Description (2000 characters) is accepted', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -354,7 +354,7 @@ test.describe('DS-2 Edit existing program details', () => {
       );
     });
 
-    test('TC-015 Special characters in Name are stored and displayed verbatim', async ({
+    test('TC-015 Special characters in Name are stored and displayed verbatim', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -380,7 +380,7 @@ test.describe('DS-2 Edit existing program details', () => {
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-016 Unicode and emoji in Description persist correctly', async ({
+    test('TC-016 Unicode and emoji in Description persist correctly', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -400,7 +400,7 @@ test.describe('DS-2 Edit existing program details', () => {
       );
     });
 
-    test('TC-017 Renaming to an existing program name is allowed (duplicate names)', async ({
+    test('TC-017 Renaming to an existing program name is allowed (duplicate names)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -421,7 +421,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(nameB)).toHaveCount(2);
     });
 
-    test('TC-018 Leading and trailing whitespace in Name is trimmed on save', async ({
+    test('TC-018 Leading and trailing whitespace in Name is trimmed on save', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -440,7 +440,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(trimmed)).toBeVisible();
     });
 
-    test('TC-019 Whitespace-only Description is rejected or normalized', async ({
+    test('TC-019 Whitespace-only Description is rejected or normalized', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -461,7 +461,7 @@ test.describe('DS-2 Edit existing program details', () => {
       expect(value.trim()).toBe('');
     });
 
-    test('TC-020 Rapid double-click on Save performs a single update', async ({
+    test('TC-020 Rapid double-click on Save performs a single update', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -481,7 +481,7 @@ test.describe('DS-2 Edit existing program details', () => {
       await expect(programs.programInList(original)).toHaveCount(0);
     });
 
-    test('TC-023 Edit modal fields and Save are keyboard reachable', async ({
+    test('TC-023 Edit modal fields and Save are keyboard reachable', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,

@@ -12,7 +12,7 @@ import {
 
 test.describe('DS-119 Dashboard displaying the right components', () => {
   test.describe('Happy paths', () => {
-    test('Navigate to the Dashboard', async ({ page }) => {
+    test('Navigate to the Dashboard', { tag: '@smoke' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await expect(dashboard.heading).toBeVisible();
@@ -20,7 +20,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expectDashboardBlocksVisible(dashboard);
     });
 
-    test('Successfully navigate to Program Page', async ({ page }) => {
+    test('Successfully navigate to Program Page', { tag: '@smoke' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await dashboard.cards.click('Programs');
@@ -30,7 +30,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expect(programs.heading).toBeVisible();
     });
 
-    test('Successfully navigate to Calendar Page', async ({ page }) => {
+    test('Successfully navigate to Calendar Page', { tag: '@sanity' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await dashboard.cards.click('Calendar');
@@ -40,7 +40,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expect(calendar.heading).toBeVisible();
     });
 
-    test('Successfully navigate to Validation Page', async ({ page }) => {
+    test('Successfully navigate to Validation Page', { tag: '@sanity' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await dashboard.cards.click('Validation');
@@ -50,7 +50,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expect(validation.heading).toBeVisible();
     });
 
-    test('Successfully navigate to AI Assist Page', async ({ page }) => {
+    test('Successfully navigate to AI Assist Page', { tag: '@sanity' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await dashboard.cards.click('AI Assist');
@@ -62,20 +62,20 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('Dashboard does not show unrelated product blocks', async ({ page }) => {
+    test('Dashboard does not show unrelated product blocks', { tag: '@regression' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
 
       await expect(dashboard.cards.titleInGrid('Export')).toHaveCount(0);
       await expect(dashboard.cards.titleInGrid('Scheduler')).toHaveCount(0);
     });
 
-    test('Guest user cannot access Dashboard blocks', async ({ browser }) => {
+    test('Guest user cannot access Dashboard blocks', { tag: '@regression' }, async ({ browser }) => {
       await assertGuestRedirectedFromDashboard(browser);
     });
   });
 
   test.describe('Edge cases', () => {
-    test('Dashboard blocks remain visible after browser reload', async ({ page }) => {
+    test('Dashboard blocks remain visible after browser reload', { tag: '@regression' }, async ({ page }) => {
       const dashboard = await openDashboard(page);
       await expectDashboardBlocksVisible(dashboard);
 
@@ -84,7 +84,7 @@ test.describe('DS-119 Dashboard displaying the right components', () => {
       await expectDashboardBlocksVisible(dashboard);
     });
 
-    test('Returning to Dashboard from Programs via sidebar', async ({ page }) => {
+    test('Returning to Dashboard from Programs via sidebar', { tag: '@regression' }, async ({ page }) => {
       const programs = new ProgramsPage(page);
       await programs.goto();
       await expect(programs.heading).toBeVisible();

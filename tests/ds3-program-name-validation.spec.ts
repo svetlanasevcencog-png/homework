@@ -14,7 +14,7 @@ requireApiToken('DS-3');
 
 test.describe('DS-3 Program name validation and duplicate prevention', () => {
   test.describe('Positive flows', () => {
-    test('TC-001 Program with special characters in name is created successfully', async ({
+    test('TC-001 Program with special characters in name is created successfully', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -30,7 +30,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-002 Valid unique name with letters, numbers, and spaces is accepted', async ({
+    test('TC-002 Valid unique name with letters, numbers, and spaces is accepted', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -46,7 +46,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-003 Name at maximum allowed length (255) is accepted when unique', async ({
+    test('TC-003 Name at maximum allowed length (255) is accepted when unique', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -67,7 +67,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-004 Whitespace-only program name is not submitted', async ({ page }) => {
+    test('TC-004 Whitespace-only program name is not submitted', { tag: '@regression' }, async ({ page }) => {
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
@@ -77,7 +77,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-006 Empty program name must not create a program', async ({ page }) => {
+    test('TC-006 Empty program name must not create a program', { tag: '@smoke' }, async ({ page }) => {
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
 
@@ -87,7 +87,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-005 Duplicate name is allowed (no blocking error)', async ({
+    test('TC-005 Duplicate name is allowed (no blocking error)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -106,7 +106,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toHaveCount(2);
     });
 
-    test('TC-009 Padded duplicate name is allowed after trim (SS-25)', async ({
+    test('TC-009 Padded duplicate name is allowed after trim (SS-25)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -125,7 +125,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toHaveCount(2);
     });
 
-    test('TC-008 Case-variant duplicate is allowed (case-sensitive uniqueness)', async ({
+    test('TC-008 Case-variant duplicate is allowed (case-sensitive uniqueness)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -145,7 +145,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(variant)).toBeVisible();
     });
 
-    test('TC-007 Server rejection on create surfaces without a phantom program', async ({
+    test('TC-007 Server rejection on create surfaces without a phantom program', { tag: '@regression' }, async ({
       page,
     }) => {
       // The live server accepts duplicates (SS-25), so there is no genuine
@@ -166,13 +166,13 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
-    test('TC-010 Unauthorized user must not create a program', async ({ browser }) => {
+    test('TC-010 Unauthorized user must not create a program', { tag: '@regression' }, async ({ browser }) => {
       await assertGuestRedirectedToLogin(browser, '/programs');
     });
   });
 
   test.describe('Edge cases', () => {
-    test('TC-011 Name one character over maximum is rejected or blocked', async ({
+    test('TC-011 Name one character over maximum is rejected or blocked', { tag: '@regression' }, async ({
       page,
     }) => {
       const suffix = uniqueName('');
@@ -195,7 +195,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       }).toPass();
     });
 
-    test('TC-012 Unicode and accented characters in name are accepted when unique', async ({
+    test('TC-012 Unicode and accented characters in name are accepted when unique', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -209,7 +209,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-013 Emoji in program name is accepted', async ({
+    test('TC-013 Emoji in program name is accepted', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -223,7 +223,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-014 HTML-like strings in name are stored as text, not executed', async ({
+    test('TC-014 HTML-like strings in name are stored as text, not executed', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -243,7 +243,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-015 Duplicate check after trim allows duplicate (SS-25)', async ({
+    test('TC-015 Duplicate check after trim allows duplicate (SS-25)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -262,7 +262,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toHaveCount(2);
     });
 
-    test('TC-016 Tab and newline in name are trimmed to a valid unique name', async ({
+    test('TC-016 Tab and newline in name are trimmed to a valid unique name', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -277,7 +277,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-017 Single visible character name is accepted with unique suffix', async ({
+    test('TC-017 Single visible character name is accepted with unique suffix', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -291,7 +291,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-019 Special-character acceptance beyond AC example', async ({
+    test('TC-019 Special-character acceptance beyond AC example', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -307,7 +307,7 @@ test.describe('DS-3 Program name validation and duplicate prevention', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-020 Dismissing the form retains field values for a corrected retry', async ({
+    test('TC-020 Dismissing the form retains field values for a corrected retry', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,

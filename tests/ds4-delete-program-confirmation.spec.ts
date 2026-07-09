@@ -30,7 +30,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
   test.setTimeout(60_000);
 
   test.describe('Positive flows', () => {
-    test('TC-001 Confirmation dialog appears when initiating delete', async ({
+    test('TC-001 Confirmation dialog appears when initiating delete', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -52,7 +52,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-002 Program is removed from the list after user confirms deletion', async ({
+    test('TC-002 Program is removed from the list after user confirms deletion', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -65,7 +65,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-003 Program remains in the list when user cancels deletion', async ({
+    test('TC-003 Program remains in the list when user cancels deletion', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -78,7 +78,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-004 Cancel preserves Test Program when that is the program under delete', async ({
+    test('TC-004 Cancel preserves Test Program when that is the program under delete', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -93,7 +93,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-005 Program must not be deleted if confirmation is never completed', async ({
+    test('TC-005 Program must not be deleted if confirmation is never completed', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -106,7 +106,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toHaveCount(1);
     });
 
-    test('TC-010 Deleting one program must not remove a different program', async ({
+    test('TC-010 Deleting one program must not remove a different program', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -123,7 +123,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(toKeep)).toBeVisible();
     });
 
-    test('TC-008 Double confirmation click performs a single delete', async ({
+    test('TC-008 Double confirmation click performs a single delete', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -136,7 +136,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-006 Deletion must not occur when the server returns an error after confirm', async ({
+    test('TC-006 Deletion must not occur when the server returns an error after confirm', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -155,7 +155,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
-    test('TC-009 Program must not disappear before successful server acknowledgment', async ({
+    test('TC-009 Program must not disappear before successful server acknowledgment', { tag: '@regression' }, async ({
       page,
     }) => {
       const only = {
@@ -213,7 +213,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
   });
 
   test.describe('Edge cases', () => {
-    test('TC-011 Confirmation copy displays correctly for program name with special characters', async ({
+    test('TC-011 Confirmation copy displays correctly for program name with special characters', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -226,7 +226,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       expect(message).toContain('Informatique & IA - Niveau 2');
     });
 
-    test('TC-017 Program name containing quotes renders safely in dialog', async ({
+    test('TC-017 Program name containing quotes renders safely in dialog', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -242,7 +242,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-013 Dismiss on confirmation dialog keeps program in the list', async ({
+    test('TC-013 Dismiss on confirmation dialog keeps program in the list', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -255,7 +255,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-020 Cancel does not leave delete control stuck; delete can be reopened', async ({
+    test('TC-020 Cancel does not leave delete control stuck; delete can be reopened', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -269,7 +269,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       expect(message).toContain(name);
     });
 
-    test('TC-012 Confirmation copy for very long program name (boundary display)', async ({
+    test('TC-012 Confirmation copy for very long program name (boundary display)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -285,7 +285,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(name)).toBeVisible();
     });
 
-    test('TC-015 Deleting the only program shows appropriate empty state', async ({
+    test('TC-015 Deleting the only program shows appropriate empty state', { tag: '@regression' }, async ({
       page,
     }) => {
       const only = {
@@ -328,7 +328,7 @@ test.describe('DS-4 Delete program with confirmation', () => {
       await expect(programs.programInList(only.name)).toHaveCount(0);
     });
 
-    test('TC-018 Duplicate display names delete only the selected row', async ({
+    test('TC-018 Duplicate display names delete only the selected row', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
