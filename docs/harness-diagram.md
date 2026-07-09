@@ -50,7 +50,7 @@ flowchart TB
   end
 
   subgraph CI["GitHub Actions"]
-    E2E["playwright.yml\nE2E on push/PR"]
+    E2E["playwright.yml\n@smoke PR · @sanity push · @regression on demand"]
     ART["playwright-report artifact"]
   end
 
@@ -190,7 +190,7 @@ flowchart TB
 | **Self-heal** | POM only · assertions unchanged · drift only |
 | **Hook** | Blocks deleted/commented `expect(` in `tests/**` |
 | **Playwright rules** | Refusals: no assertion weakening, no CSS/XPath, no `waitForTimeout` |
-| **CI** | `playwright.yml` on every PR · `qa-orchestrator.yml` daily backlog (≤5 tickets) |
+| **CI** | `playwright.yml`: `@smoke` on PR · `@sanity` on push · `@regression` on demand · `qa-orchestrator.yml` daily backlog (≤5 tickets) |
 
 ## Related files
 

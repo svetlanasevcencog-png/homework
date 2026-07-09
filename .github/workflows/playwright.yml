@@ -5,6 +5,16 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite to run on demand
+        required: true
+        default: regression
+        type: choice
+        options:
+          - smoke
+          - sanity
+          - regression
 
 jobs:
   test:
@@ -35,17 +45,43 @@ jobs:
         echo "DIDAXIS_PASSWORD set:  ${DIDAXIS_PASSWORD:+true}"
         echo "DIDAXIS_API_TOKEN set: ${DIDAXIS_API_TOKEN:+true}"
         echo "DIDAXIS_URL set:       ${DIDAXIS_URL:+true}"
-    - name: Run Playwright tests
+    - name: Resolve Playwright suite
+      id: suite
+      run: |
+        case "${{ github.event_name }}" in
+          pull_request)
+            SUITE=smoke
+            ;;
+          push)
+            SUITE=sanity
+            ;;
+          workflow_dispatch)
+            SUITE="${{ inputs.suite }}"
+            ;;
+          *)
+            echo "Unsupported event: ${{ github.event_name }}" >&2
+            exit 1
+            ;;
+        esac
+        echo "suite=${SUITE}" >> "$GITHUB_OUTPUT"
+        echo "grep=@${SUITE}" >> "$GITHUB_OUTPUT"
+        echo "Resolved suite: ${SUITE} (event=${{ github.event_name }})"
+    - name: Run Playwright tests (${{ steps.suite.outputs.suite }})
       env:
         DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
         DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
         DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
         DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
-      run: npx playwright test --project=setup --project=chromium-didaxis --project=chromium-guest
+      run: >
+        npx playwright test
+        --grep "${{ steps.suite.outputs.grep }}"
+        --project=setup
+        --project=chromium-didaxis
+        --project=chromium-guest
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report
+        name: playwright-report-${{ steps.suite.outputs.suite }}
         path: playwright-report/
         retention-days: 30
 
