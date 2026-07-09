@@ -76,14 +76,23 @@ OUTPUT PER TICKET
 - Open ONE PR per ticket containing only that ticket's spec (plus any POM/data changes). One ticket = one PR; never bundle tickets. Use a fresh branch per ticket named qa/ds-<key>-tests.
 - Reference the DS key in the PR title and body (link the ticket).
 - Include a **Known defects** section in the PR body when Jira bugs were found or filed.
-- Add the `tests-generated` label to the ticket (via the REST PUT endpoint above)
-  so the next run's queue skips it.
+- **Generation gate (required):** after opening the PR, wait for the E2E Tests
+  workflow job named `test` (`playwright.yml` on `pull_request`). Poll with
+  `gh pr checks <n>`. STOP and escalate (leave ticket unlabeled) if checks are
+  empty, missing, or red — same failure mode as PR #18. Only when `test` is
+  success, add the `tests-generated` label (REST PUT above) so the next queue
+  skips it.
 
 HARD LIMITS (must obey)
 - NEVER merge or close any PR or ticket without a human.
 - NEVER create a duplicate Jira bug — search first; reference an existing match.
 - Stop and escalate if a run fails identically twice or triage can't classify.
+- Stop and escalate if the Generation gate fails (no/red Playwright `test` check).
+- **Reliability eval (mandatory):** before the REPORT summary (end of run), apply
+  `suite-reliability-eval` and refresh repo-root `eval-report.md` (flake, heal,
+  generation-gate, ask-vs-guess). Do not invent numbers; say `n/a` if a source
+  is missing. Done is incomplete without this update.
 - Stop the whole run once 5 tickets are processed.
 
 REPORT
-At the end, print a concise summary: tickets processed, PR links, labels added, any tickets skipped/stopped (with reasons), and Jira bugs referenced or filed (with keys and links).
+At the end, print a concise summary: tickets processed, PR links, labels added, any tickets skipped/stopped (with reasons), Jira bugs referenced or filed (with keys and links), and confirmation that `eval-report.md` was refreshed (or why not).

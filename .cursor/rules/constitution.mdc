@@ -16,6 +16,7 @@ Hard limits for Playwright work in this repo. Details live in `playwright-conven
 | `storageState` auth | Log in once via the setup project; never per-test UI login. |
 | Unique self-cleaning data | Unique names; track + API teardown (`trackProgram` / `api-cleanup`). No leftover records. |
 | One tag per test | Exactly one of `@smoke` \| `@sanity` \| `@regression` \| `@api` \| `@e2e` \| `@destructive` on `test()` — never on `describe`. `@destructive` only for shared/global state + serial + revert hook. |
+| Reliability eval before Done | Orchestrator refreshes `eval-report.md` via `suite-reliability-eval` (flake, heal, generation-gate, ask-vs-guess) before marking Done / ending Backlog. |
 
 ## SHOULD
 
@@ -39,6 +40,6 @@ Hard limits for Playwright work in this repo. Details live in `playwright-conven
 
 ## Index
 
-**Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `exploratory-charter` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal`
+**Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `exploratory-charter` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal` · `suite-reliability-eval`
 
 **Agents:** `test-writer` (plan → specs) · `triage` (red CI → bug vs test) · `bug-reporter` (app bug → Jira)

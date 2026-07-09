@@ -123,7 +123,10 @@ sequenceDiagram
   Orch->>PW: npx playwright test
   PW-->>Orch: green
   Orch->>GH: open PR (one ticket = one PR)
-  Human->>GH: approve merge
+  Orch->>GH: Generation gate — wait for job test green
+  Note over Orch,GH: empty/red checks → STOP (no tests-generated)
+  Orch->>Orch: suite-reliability-eval → eval-report.md
+  Human->>GH: approve merge (main requires check test)
 ```
 
 ## Heal on red
@@ -190,7 +193,9 @@ flowchart TB
 | **Self-heal** | POM only · assertions unchanged · drift only |
 | **Hook** | Blocks deleted/commented `expect(` in `tests/**` |
 | **Playwright rules** | Refusals: no assertion weakening, no CSS/XPath, no `waitForTimeout` |
-| **CI** | `playwright.yml`: `@smoke` on PR · `@sanity` on push · `@regression` on demand · `qa-orchestrator.yml` daily backlog (≤5 tickets) |
+| **CI** | `playwright.yml`: `@smoke` on PR · `@sanity` on push · `@regression` on demand · JUnit artifact for flake scrape · `qa-orchestrator.yml` daily backlog (≤5 tickets) |
+| **Generation gate** | After PR open: Playwright job `test` must be green; empty/red → stop (no `tests-generated`). `main` requires status check `test`. |
+| **Reliability eval** | Before Done / end of Backlog: `suite-reliability-eval` refreshes `eval-report.md` (mandatory). |
 
 ## Related files
 
