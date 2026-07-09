@@ -128,17 +128,22 @@ test-data/         Faker factories, static invalid sets, enums
 cypress/           Legacy Cypress specs and POMs
 docs/              Architecture and harness documentation
 .cursor/           Agent rules, skills, hooks, and agents
-.github/workflows/ CI (Playwright E2E on every PR, daily QA orchestrator)
+.github/workflows/ CI (tagged Playwright suites + daily QA orchestrator)
 ```
 
 **Layering:** plans → specs (assertions) → pages (locators) → helpers/fixtures.
 
 ## CI
 
-GitHub Actions runs on every push and pull request to `main`:
+**E2E Tests** (`.github/workflows/playwright.yml`) select a Playwright tag by trigger:
 
-- **E2E Tests** (`.github/workflows/playwright.yml`) — Playwright setup + Didaxis + guest projects; uploads `playwright-report` artifact on failure
-- **Cypress** — runs in parallel on the same workflow
+| Trigger | Suite | Grep |
+|---------|-------|------|
+| Pull request → `main` | Smoke | `@smoke` |
+| Push → `main` | Sanity | `@sanity` |
+| Manual (`workflow_dispatch`) | Regression (default; smoke/sanity also selectable) | `@regression` |
+
+Playwright runs setup + Didaxis + guest projects and uploads a `playwright-report-<suite>` artifact. **Cypress** runs in parallel on the same workflow.
 
 Didaxis secrets live in the `dev1` GitHub Environment (`DIDAXIS_URL`, `DIDAXIS_EMAIL`, `DIDAXIS_PASSWORD`, `DIDAXIS_API_TOKEN`).
 
