@@ -38,6 +38,36 @@ Hard limits for Playwright work in this repo. Details live in `playwright-conven
 | Healing a real app bug | Route to `jira-bug-reporter` / `bug-reporter`; heal locators only for drift. |
 | Tags on `describe` / multi-tag / wrong `@destructive` | One allowed tag on each `test()`; own-data cleanup keeps importance tag; shared-state needs `@destructive` + revert. |
 
+## Agent governance
+
+Behavioral contract (not hook-enforced). Audit before you edit; never invent facts.
+
+### Audit-then-edit
+
+For every **non-trivial** task, emit a **Proposal** block **before** any edit:
+
+```
+Proposal
+- Scope: …
+- Confidence: N/10
+- Rationale: …
+- Unknowns: …
+```
+
+Trivial work (typo, one-line rename, pure formatting) may skip the Proposal. Everything else — new files, multi-file changes, locator/API guesses, ticket implementation — must propose first.
+
+### Confidence gate
+
+| Confidence | Action |
+|------------|--------|
+| **< 5** | Do **not** proceed. Ask for the missing input. |
+| **5–7** | Proceed only with **explicit Unknowns** listed and **human approval**. |
+| **≥ 8** | Proceed. |
+
+### Do not invent
+
+Never invent a path, enum, env var, credential, or message. If it is not in the repo, ticket, or prior exploration — **ask** or **explore** first.
+
 ## Index
 
 **Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `exploratory-charter` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal` · `suite-reliability-eval`
