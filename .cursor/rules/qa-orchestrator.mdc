@@ -58,6 +58,7 @@ alwaysApply: false
 - **Run is red** → delegate to `triage` (apply `ci-failure-triage`)
 - **Real app bug** → **log suspected defect in Jira** (search first, then file or reference); delegate to `bug-reporter` when MCP is available — **never heal**
 - **Test issue (drift)** → apply `self-heal` (see Heal on red); if not drift, delegate to `test-writer` (propose fix, human OKs)
+- **Local suite green** → open the PR, then enforce **Generation gate** (required)
 
 ## Heal on red
 
@@ -95,6 +96,33 @@ classification.
 - **Budget: at most 5 heals per run.** One locator repair per heal; do not batch
   unrelated drift fixes. When the cap is reached, stop and report remaining
   failures for human follow-up.
+
+## Generation gate
+
+Every ticket / explore test PR must show a **green Playwright CI check on the
+first PR** before the orchestrator treats the ticket as done. Local green alone
+is not enough (DS-119 / PR #18 shipped with zero workflow runs).
+
+Applies to branches: `qa/ds-*`, `fix/self-heal-*`, and any PR whose diff adds or
+changes `tests/ds*.spec.ts` or `features/*.feature.md`.
+
+### After `gh pr create` (or when handed an open test PR)
+
+1. Wait for the `pull_request` **E2E Tests** workflow (`playwright.yml`) — job
+   name **`test`** (smoke suite).
+2. Poll with `gh pr checks <n>` / `gh run list --branch <head> --workflow=playwright.yml`.
+3. **STOP and escalate** (do **not** add `tests-generated`, do **not** tell the
+   human the ticket is merge-ready) if any of:
+   - **empty** — no `test` check appears within a reasonable wait (workflow never
+     queued; same failure mode as PR #18)
+   - **red** — `test` conclusion is `failure` / `cancelled`
+   - **stale missing** — PR is open and checks were never requested (e.g. workflow
+     path filters skipped the run)
+4. **Pass** only when `test` is **success**. Then proceed to Done labeling.
+
+Humans still approve merge; branch protection on `main` also requires the `test`
+check. The orchestrator gate exists so agents do not mark work done when CI never
+ran.
 
 ## Suspected defect handling
 
@@ -149,8 +177,10 @@ for the next run — do not exceed the cap.
   changes). One ticket = one PR; do not bundle multiple tickets into a PR.
 - **Link the ticket** in the PR (reference the DS key in the title/body).
 - Include **Known defects** in the PR body when bugs were found or filed.
-- Add the **`tests-generated`** label to the ticket so the next run's queue
-  skips it.
+- Enforce **Generation gate** on that PR (green `test` check). Only after the
+  gate passes, add the **`tests-generated`** label so the next run's queue
+  skips it. If the gate fails (empty/red), leave the ticket unlabeled and report
+  why.
 
 **Stop conditions / move on:**
 
@@ -165,10 +195,12 @@ for the next run — do not exceed the cap.
 ## Done
 
 The suite is green for the ticket (or failing scenarios are quarantined with
-`test.fixme`), tests are in a PR, `tests-generated` is applied, and any app
+`test.fixme`), tests are in a PR, the **Generation gate** passed (Playwright
+`test` check green on that PR), `tests-generated` is applied, and any app
 defect is logged or linked in Jira.
 
 In Backlog mode: each processed ticket has one PR (ticket linked, spec
-committed) and the `tests-generated` label, up to the 5-ticket budget; skipped
-or stopped tickets are reported for human follow-up. No PR or ticket is merged
-or closed without a human.
+committed), a green first-PR `test` check, and the `tests-generated` label, up
+to the 5-ticket budget; skipped or stopped tickets (including generation-gate
+failures) are reported for human follow-up. No PR or ticket is merged or closed
+without a human.

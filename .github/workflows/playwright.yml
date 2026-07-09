@@ -81,18 +81,29 @@ jobs:
         DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
         DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
         DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+        # Machine-readable results for flake scrape (retries → flaky in summary/JUnit)
+        PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit-results.xml
+      # html = interactive report; junit = artifact for eval-report flake rate
       run: >
         npx playwright test
         --grep "${{ steps.suite.outputs.grep }}"
         --project=chromium-didaxis
         --project=chromium-guest
         --no-deps
+        --reporter=html,junit
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report-${{ steps.suite.outputs.suite }}
         path: playwright-report/
         retention-days: 30
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-junit-${{ steps.suite.outputs.suite }}
+        path: junit-results.xml
+        retention-days: 30
+        if-no-files-found: ignore
 
   cypress:
     timeout-minutes: 30

@@ -28,3 +28,5 @@ Conventions:
 Guardrails:
 - Write only under `tests/`. Do not modify application source.
 - A human approves the PR before merge.
+- Hand back to the orchestrator for the **Generation gate** (green Playwright
+  `test` check on the PR) — do not treat local green as merge-ready.
