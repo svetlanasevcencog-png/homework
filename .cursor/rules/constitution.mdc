@@ -1,0 +1,44 @@
+---
+description: Always-on Playwright constitution — hard MUST / SHOULD / WON'T for this repo. Read on every task.
+alwaysApply: true
+---
+
+# Constitution
+
+Hard limits for Playwright work in this repo. Details live in `playwright-conventions` and the skills below — this file is the non-negotiable summary.
+
+## MUST
+
+| Rule | Meaning |
+|------|---------|
+| Role-based locators | `getByRole` → `getByLabel` → `getByText`; `getByTestId` only as escape hatch. No CSS/XPath. |
+| Web-first assertions | Wait with `expect(locator).…` / Playwright auto-waiting. Never fixed sleeps. |
+| `storageState` auth | Log in once via the setup project; never per-test UI login. |
+| Unique self-cleaning data | Unique names; track + API teardown (`trackProgram` / `api-cleanup`). No leftover records. |
+| One tag per test | Exactly one of `@smoke` \| `@sanity` \| `@regression` \| `@api` \| `@e2e` \| `@destructive` on `test()` — never on `describe`. `@destructive` only for shared/global state + serial + revert hook. |
+
+## SHOULD
+
+| Rule | Meaning |
+|------|---------|
+| Faker factories | Build test data via Faker-backed factories, not hand-rolled literals. |
+| Enums for repeated strings | Shared UI labels / statuses live in enums or constants — no copy-paste magic strings. |
+| JSDoc on action methods | Document POM / helper action methods (params, side effects, return). |
+
+## WON'T
+
+| Refusal | Do this instead |
+|---------|-----------------|
+| XPath (or CSS as default) | Re-discover via role / label / text. |
+| `waitForTimeout` | Web-first `expect` or explicit Playwright waits. |
+| Hardcoded secrets | `process.env` + existing auth fixtures. |
+| `any` type | Proper Playwright / TypeScript types. |
+| Weakened assertions | Fix app, locator, or triage — never delete/`fixme` to green a red run. |
+| Healing a real app bug | Route to `jira-bug-reporter` / `bug-reporter`; heal locators only for drift. |
+| Tags on `describe` / multi-tag / wrong `@destructive` | One allowed tag on each `test()`; own-data cleanup keeps importance tag; shared-state needs `@destructive` + revert. |
+
+## Index
+
+**Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal`
+
+**Agents:** `test-writer` (plan → specs) · `triage` (red CI → bug vs test) · `bug-reporter` (app bug → Jira)

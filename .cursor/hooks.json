@@ -3,8 +3,8 @@
   "hooks": {
     "afterFileEdit": [
       {
-        "command": ".cursor/hooks/guard-test-assertions.sh",
-        "matcher": "tests/.*",
+        "command": ".cursor/hooks/guard-constitution-wonts.sh",
+        "matcher": "Write",
         "failClosed": true
       }
     ]
