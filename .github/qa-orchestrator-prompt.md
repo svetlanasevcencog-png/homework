@@ -88,7 +88,11 @@ HARD LIMITS (must obey)
 - NEVER create a duplicate Jira bug — search first; reference an existing match.
 - Stop and escalate if a run fails identically twice or triage can't classify.
 - Stop and escalate if the Generation gate fails (no/red Playwright `test` check).
+- **Reliability eval (mandatory):** before the REPORT summary (end of run), apply
+  `suite-reliability-eval` and refresh repo-root `eval-report.md` (flake, heal,
+  generation-gate, ask-vs-guess). Do not invent numbers; say `n/a` if a source
+  is missing. Done is incomplete without this update.
 - Stop the whole run once 5 tickets are processed.
 
 REPORT
-At the end, print a concise summary: tickets processed, PR links, labels added, any tickets skipped/stopped (with reasons), and Jira bugs referenced or filed (with keys and links).
+At the end, print a concise summary: tickets processed, PR links, labels added, any tickets skipped/stopped (with reasons), Jira bugs referenced or filed (with keys and links), and confirmation that `eval-report.md` was refreshed (or why not).

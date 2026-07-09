@@ -45,6 +45,8 @@ alwaysApply: false
   re-discover via Playwright MCP, patch POM, re-run green with assertions
   unchanged; one locator repair per heal
 - `jira-bug-reporter` — format and file suspected defects in Jira
+- `suite-reliability-eval` — **mandatory** before Done / end of Backlog:
+  refresh `eval-report.md` (flake, heal, generation-gate, ask-vs-guess)
 
 ## Routing
 
@@ -59,6 +61,7 @@ alwaysApply: false
 - **Real app bug** → **log suspected defect in Jira** (search first, then file or reference); delegate to `bug-reporter` when MCP is available — **never heal**
 - **Test issue (drift)** → apply `self-heal` (see Heal on red); if not drift, delegate to `test-writer` (propose fix, human OKs)
 - **Local suite green** → open the PR, then enforce **Generation gate** (required)
+- **Generation gate passed** → run **Reliability eval** (required) before Done
 
 ## Heal on red
 
@@ -123,6 +126,35 @@ changes `tests/ds*.spec.ts` or `features/*.feature.md`.
 Humans still approve merge; branch protection on `main` also requires the `test`
 check. The orchestrator gate exists so agents do not mark work done when CI never
 ran.
+
+## Reliability eval (mandatory)
+
+Before marking any ticket or backlog run **Done**, apply
+`suite-reliability-eval` and update repo-root `eval-report.md`.
+
+Cursor has **no built-in telemetry** for these metrics — measure from CI logs /
+JUnit artifacts, PR history, and session transcripts.
+
+### Required sections in `eval-report.md`
+
+1. **Flake rate** — tests that passed only on retry, last N CI runs
+2. **Heal success rate** — clean drift heals / total, plus **masked regressions
+   (must be 0)**
+3. **Generation-gate pass rate** — green + conforming + maps-to-AC on first PR
+4. **Ask-vs-guess** — times the agent asked vs invented a value
+
+For each: the number, how you measured it, one line on what it tells us. End
+with **Top reliability risk** and **Next action**.
+
+### Rules
+
+- **Do not skip.** Done is incomplete without a refreshed `eval-report.md`.
+- In Backlog mode: run the eval **once at the end of the run** (not per ticket),
+  after the last ticket’s Generation gate (or after the budget stop).
+- Include the updated report in the open PR when practical; otherwise open
+  `chore/eval-report`. Never push to `main`.
+- If a metric cannot be measured, write `n/a` and name the gap — never invent
+  numbers.
 
 ## Suspected defect handling
 
@@ -192,15 +224,20 @@ for the next run — do not exceed the cap.
 
 **Hard limits:** **Never merge or close a PR or ticket without a human.**
 
+**End of backlog run:** after the last ticket (or budget stop), run
+**Reliability eval** (`suite-reliability-eval`) once and refresh
+`eval-report.md` before the REPORT summary.
+
 ## Done
 
 The suite is green for the ticket (or failing scenarios are quarantined with
 `test.fixme`), tests are in a PR, the **Generation gate** passed (Playwright
-`test` check green on that PR), `tests-generated` is applied, and any app
-defect is logged or linked in Jira.
+`test` check green on that PR), `tests-generated` is applied, any app defect
+is logged or linked in Jira, and **`eval-report.md` has been refreshed** via
+`suite-reliability-eval`.
 
 In Backlog mode: each processed ticket has one PR (ticket linked, spec
 committed), a green first-PR `test` check, and the `tests-generated` label, up
 to the 5-ticket budget; skipped or stopped tickets (including generation-gate
-failures) are reported for human follow-up. No PR or ticket is merged or closed
-without a human.
+failures) are reported for human follow-up; the run ends with an updated
+`eval-report.md`. No PR or ticket is merged or closed without a human.

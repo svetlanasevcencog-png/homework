@@ -15,6 +15,8 @@ Cursor Agent Skills for this repository. Each skill is a folder with a `SKILL.md
 ├── jira-bug-reporter/
 ├── jira-ticket-analyzer/
 ├── pom-conventions/
+├── self-heal/
+├── suite-reliability-eval/
 └── <skill-name>/
     └── SKILL.md
 ```
@@ -31,6 +33,8 @@ Cursor Agent Skills for this repository. Each skill is a folder with a `SKILL.md
 | [jira-bug-reporter](jira-bug-reporter/SKILL.md) | A Playwright test fails and needs root-cause analysis plus a Jira bug ticket. |
 | [jira-ticket-analyzer](jira-ticket-analyzer/SKILL.md) | Turning a Jira ticket (DS-1, DS-2, etc.) into reviewable Gherkin scenarios before writing Playwright code. |
 | [pom-conventions](pom-conventions/SKILL.md) | Generating, refactoring, or reviewing Didaxis UI tests — Page Object Model layout, locators, and file structure; no inline locators in specs. |
+| [self-heal](self-heal/SKILL.md) | Locator drift repair in POMs after triage classifies a red run as a test issue — never for real app bugs. |
+| [suite-reliability-eval](suite-reliability-eval/SKILL.md) | Mandatory before orchestrator Done / end of Backlog — refresh `eval-report.md` (flake, heal, generation-gate, ask-vs-guess). |
 
 ## Adding a skill
 

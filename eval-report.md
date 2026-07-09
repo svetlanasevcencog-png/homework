@@ -69,4 +69,6 @@ Re-measure generation-gate on the next `qa/ds-*` PR; target is **100%** with emp
 
 ## Next action
 
-On the next ticket generation PR: confirm `gh pr checks` shows `test` → success before applying `tests-generated`, and scrape flake from the new `playwright-junit-*` artifact instead of log greps.
+Keep `suite-reliability-eval` mandatory on every orchestrator Done / Backlog
+REPORT: refresh `eval-report.md` from JUnit + PR history + transcripts, and
+confirm the next `qa/ds-*` PR shows `test` → success before `tests-generated`.
