@@ -39,6 +39,6 @@ Hard limits for Playwright work in this repo. Details live in `playwright-conven
 
 ## Index
 
-**Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal`
+**Skills:** `api-cleanup` · `ci-failure-triage` · `didaxis-program-deleter` · `explore-and-generate` · `exploratory-charter` · `jira-bug-reporter` · `jira-ticket-analyzer` · `pom-conventions` · `self-heal`
 
 **Agents:** `test-writer` (plan → specs) · `triage` (red CI → bug vs test) · `bug-reporter` (app bug → Jira)
