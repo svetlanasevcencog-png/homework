@@ -19,7 +19,7 @@ requireApiToken('DS-5');
 
 test.describe('DS-5 Program list filtering and display', () => {
   test.describe('Positive flows', () => {
-    test('TC-001 Each program row shows Program name and Description', async ({
+    test('TC-001 Each program row shows Program name and Description', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -51,7 +51,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       }
     });
 
-    test('TC-003 List remains correct after refresh when programs exist', async ({
+    test('TC-003 List remains correct after refresh when programs exist', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -72,7 +72,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(refreshed.programDataCell(row)).toContainText(description);
     });
 
-    test('TC-004 Single program displays name and description without empty-state copy', async ({
+    test('TC-004 Single program displays name and description without empty-state copy', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -90,7 +90,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.emptyStateMessage).toHaveCount(0);
     });
 
-    test('TC-004b Authenticated programs page shows heading, table, and new-program action', async ({
+    test('TC-004b Authenticated programs page shows heading, table, and new-program action', { tag: '@smoke' }, async ({
       page,
     }) => {
       const programs = await openProgramsList(page);
@@ -101,7 +101,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(programs.newProgramButton).toBeVisible();
     });
 
-    test('TC-004c Sidebar navigation is visible on the programs page', async ({ page }) => {
+    test('TC-004c Sidebar navigation is visible on the programs page', { tag: '@sanity' }, async ({ page }) => {
       const programs = await openProgramsList(page);
       const nav = programs.navigation;
 
@@ -115,7 +115,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(nav.signOutButton).toBeVisible();
     });
 
-    test('TC-004d Programs table exposes Program and actions column headers', async ({
+    test('TC-004d Programs table exposes Program and actions column headers', { tag: '@sanity' }, async ({
       page,
     }) => {
       const programs = await openProgramsList(page);
@@ -124,7 +124,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(programs.tableColumnHeaders).toHaveCount(2);
     });
 
-    test('TC-004e Row exposes Edit and Delete controls by accessible name', async ({
+    test('TC-004e Row exposes Edit and Delete controls by accessible name', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -137,7 +137,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(programs.deleteButtonFor(name)).toBeVisible();
     });
 
-    test('TC-004f Sidebar Programs navigation opens the programs page', async ({ page }) => {
+    test('TC-004f Sidebar Programs navigation opens the programs page', { tag: '@sanity' }, async ({ page }) => {
       const dashboard = new DashboardPage(page);
       await dashboard.goto();
       await expect(dashboard.heading).toBeVisible();
@@ -152,7 +152,7 @@ test.describe('DS-5 Program list filtering and display', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-006 Empty state must not appear when programs exist', async ({
+    test('TC-006 Empty state must not appear when programs exist', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -169,7 +169,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.newProgramButton).toBeVisible();
     });
 
-    test('TC-008 List must not swap name and description in the row', async ({
+    test('TC-008 List must not swap name and description in the row', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -191,7 +191,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       );
     });
 
-    test('TC-002 Empty state message and first-program prompt when no programs exist', async ({
+    test('TC-002 Empty state message and first-program prompt when no programs exist', { tag: '@smoke' }, async ({
       page,
     }) => {
       await mockEmptyProgramList(page);
@@ -202,7 +202,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programColumnHeader).toHaveCount(0);
     });
 
-    test('TC-007 API failure shows a false empty state (known defect DS-35)', async ({
+    test('TC-007 API failure shows a false empty state (known defect DS-35)', { tag: '@regression' }, async ({
       page,
     }) => {
       // DESIRED: a failed GET /api/programs should surface an error, not the
@@ -217,7 +217,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.emptyStateMessage).toBeVisible();
     });
 
-    test('TC-007b Malformed list response renders a blank programs view with no error (DS-114)', async ({
+    test('TC-007b Malformed list response renders a blank programs view with no error (DS-114)', { tag: '@regression' }, async ({
       page,
     }) => {
       await mockMalformedProgramList(page);
@@ -231,7 +231,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       expect(await visibleFailureMessages(page)).toEqual([]);
     });
 
-    test('TC-009 Unauthorized user must not see program list content', async ({
+    test('TC-009 Unauthorized user must not see program list content', { tag: '@regression' }, async ({
       browser,
     }) => {
       await assertGuestRedirectedToLogin(browser, '/programs');
@@ -244,7 +244,7 @@ test.describe('DS-5 Program list filtering and display', () => {
   });
 
   test.describe('Edge cases', () => {
-    test('TC-010 Very long Description displays without breaking the row', async ({
+    test('TC-010 Very long Description displays without breaking the row', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -260,7 +260,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programDataCell(row)).toContainText(description.slice(0, 80));
     });
 
-    test('TC-011 Very long Program name displays in the list row', async ({
+    test('TC-011 Very long Program name displays in the list row', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -277,7 +277,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programDataCell(list.programRow(name))).toContainText(description);
     });
 
-    test('TC-012 Special characters and HTML-like text render safely in list', async ({
+    test('TC-012 Special characters and HTML-like text render safely in list', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -299,7 +299,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-013 Unicode and accented text display correctly', async ({
+    test('TC-013 Unicode and accented text display correctly', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -315,7 +315,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programDataCell(row)).toContainText('日本語');
     });
 
-    test('TC-014 Empty Description shows name with blank or minimal description area', async ({
+    test('TC-014 Empty Description shows name with blank or minimal description area', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -331,7 +331,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       );
     });
 
-    test('TC-015 Duplicate program names show two distinguishable rows (SS-25)', async ({
+    test('TC-015 Duplicate program names show two distinguishable rows (SS-25)', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -347,7 +347,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.programRow(name).filter({ hasText: 'Cohort B' })).toHaveCount(1);
     });
 
-    test('TC-020 List shows correct paired name and description for two programs', async ({
+    test('TC-020 List shows correct paired name and description for two programs', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -374,7 +374,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       );
     });
 
-    test('TC-019 Empty state CTA keyboard and screen-reader accessibility', async ({
+    test('TC-019 Empty state CTA keyboard and screen-reader accessibility', { tag: '@regression' }, async ({
       page,
     }) => {
       await mockEmptyProgramList(page);
@@ -391,7 +391,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       await expect(list.newProgramModal.programNameInput).toBeVisible();
     });
 
-    test('TC-021 Empty state CTA mouse click opens the new program form', async ({
+    test('TC-021 Empty state CTA mouse click opens the new program form', { tag: '@regression' }, async ({
       page,
     }) => {
       await mockEmptyProgramList(page);
@@ -415,7 +415,7 @@ test.describe('DS-5 Program list filtering and display', () => {
   });
 
   test.describe('Accessibility', () => {
-    test('TC-A-001 axe scan completes on programs page', async ({ page }) => {
+    test('TC-A-001 axe scan completes on programs page', { tag: '@regression' }, async ({ page }) => {
       const programs = await openProgramsList(page);
       await expect(programs.heading).toBeVisible();
 
@@ -443,7 +443,7 @@ test.describe('DS-5 Program list filtering and display', () => {
       },
     );
 
-    test('TC-A-003 Actions column header has no accessible name (DS-117)', async ({
+    test('TC-A-003 Actions column header has no accessible name (DS-117)', { tag: '@regression' }, async ({
       page,
     }) => {
       const programs = await openProgramsList(page);

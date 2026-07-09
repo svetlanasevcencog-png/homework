@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
 /* Positive flows                                                      */
 /* ------------------------------------------------------------------ */
 test.describe('Positive flows', () => {
-  test('TC-001 New list shows empty state with no main/footer sections', async ({ page }) => {
+  test('TC-001 New list shows empty state with no main/footer sections', { tag: '@sanity' }, async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'todos' })).toBeVisible();
 
     const input = page.getByPlaceholder('What needs to be done?');
@@ -43,7 +43,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.footer')).toHaveCount(0);
   });
 
-  test('TC-002 User can create a list by adding four items', async ({ page }) => {
+  test('TC-002 User can create a list by adding four items', { tag: '@smoke' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
 
     await expect(todoItems(page)).toHaveCount(4);
@@ -56,7 +56,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.todo-count')).toHaveText('4 items left');
   });
 
-  test('TC-003 Input is cleared after each submission', async ({ page }) => {
+  test('TC-003 Input is cleared after each submission', { tag: '@sanity' }, async ({ page }) => {
     const input = page.getByPlaceholder('What needs to be done?');
     await addTodo(page, 'Task A');
 
@@ -64,7 +64,7 @@ test.describe('Positive flows', () => {
     await expect(input).toBeFocused();
   });
 
-  test('TC-004 Marking an item as completed updates its state', async ({ page }) => {
+  test('TC-004 Marking an item as completed updates its state', { tag: '@smoke' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
 
     const row = todoByText(page, 'Walk the dog');
@@ -76,7 +76,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.clear-completed')).toBeVisible();
   });
 
-  test('TC-005 Unchecking a completed item returns it to active state', async ({ page }) => {
+  test('TC-005 Unchecking a completed item returns it to active state', { tag: '@sanity' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
     const row = todoByText(page, 'Walk the dog');
     await row.locator('.toggle').check();
@@ -89,7 +89,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.clear-completed')).toHaveCount(0);
   });
 
-  test('TC-006 Removing an item via the destroy button removes only that item', async ({ page }) => {
+  test('TC-006 Removing an item via the destroy button removes only that item', { tag: '@sanity' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
 
     const row = todoByText(page, 'Write test plan');
@@ -105,7 +105,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.todo-count')).toHaveText('3 items left');
   });
 
-  test('TC-007 Removing the last remaining item hides main and footer', async ({ page }) => {
+  test('TC-007 Removing the last remaining item hides main and footer', { tag: '@sanity' }, async ({ page }) => {
     await addTodo(page, 'Solo task');
     const row = todoByText(page, 'Solo task');
     await row.hover();
@@ -116,7 +116,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.footer')).toHaveCount(0);
   });
 
-  test('TC-008 Items persist across page reloads', async ({ page }) => {
+  test('TC-008 Items persist across page reloads', { tag: '@sanity' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
     await todoByText(page, 'Walk the dog').locator('.toggle').check();
 
@@ -128,7 +128,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.todo-count')).toHaveText('3 items left');
   });
 
-  test('TC-009 Filtering shows only matching items', async ({ page }) => {
+  test('TC-009 Filtering shows only matching items', { tag: '@sanity' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
     await todoByText(page, 'Walk the dog').locator('.toggle').check();
     await todoByText(page, 'Submit homework').locator('.toggle').check();
@@ -149,7 +149,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.todo-list li label')).toHaveText([...ITEMS_4]);
   });
 
-  test('TC-010 Clear completed removes only completed items', async ({ page }) => {
+  test('TC-010 Clear completed removes only completed items', { tag: '@sanity' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
     await todoByText(page, 'Walk the dog').locator('.toggle').check();
     await todoByText(page, 'Submit homework').locator('.toggle').check();
@@ -162,7 +162,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.clear-completed')).toHaveCount(0);
   });
 
-  test('TC-011 Toggle-all marks every item as completed; toggling again clears them', async ({
+  test('TC-011 Toggle-all marks every item as completed; toggling again clears them', { tag: '@sanity' }, async ({
     page,
   }) => {
     await addTodos(page, ITEMS_4);
@@ -183,7 +183,7 @@ test.describe('Positive flows', () => {
     await expect(page.locator('.todo-count')).toHaveText('4 items left');
   });
 
-  test('TC-012 Double-click enables inline editing and Enter saves changes', async ({ page }) => {
+  test('TC-012 Double-click enables inline editing and Enter saves changes', { tag: '@sanity' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     const row = todoItems(page).first();
 
@@ -205,7 +205,7 @@ test.describe('Positive flows', () => {
 /* Negative flows                                                      */
 /* ------------------------------------------------------------------ */
 test.describe('Negative flows', () => {
-  test('TC-N-001 Empty submission is rejected', async ({ page }) => {
+  test('TC-N-001 Empty submission is rejected', { tag: '@regression' }, async ({ page }) => {
     const input = page.getByPlaceholder('What needs to be done?');
     await input.focus();
     await input.press('Enter');
@@ -215,7 +215,7 @@ test.describe('Negative flows', () => {
     await expect(page.locator('.footer')).toHaveCount(0);
   });
 
-  test('TC-N-002 Whitespace-only submission is rejected', async ({ page }) => {
+  test('TC-N-002 Whitespace-only submission is rejected', { tag: '@regression' }, async ({ page }) => {
     const input = page.getByPlaceholder('What needs to be done?');
     await input.fill('   ');
     await input.press('Enter');
@@ -225,14 +225,14 @@ test.describe('Negative flows', () => {
     await expect(page.locator('.footer')).toHaveCount(0);
   });
 
-  test('TC-N-003 Leading/trailing whitespace is trimmed on add', async ({ page }) => {
+  test('TC-N-003 Leading/trailing whitespace is trimmed on add', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, '   Buy milk   ');
 
     await expect(todoItems(page)).toHaveCount(1);
     await expect(page.locator('.todo-list li label')).toHaveText('Buy milk');
   });
 
-  test('TC-N-004 Editing to an empty value deletes the item', async ({ page }) => {
+  test('TC-N-004 Editing to an empty value deletes the item', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     const row = todoByText(page, 'Buy milk');
 
@@ -244,7 +244,7 @@ test.describe('Negative flows', () => {
     await expect(todoItems(page)).toHaveCount(0);
   });
 
-  test('TC-N-005 Escape during edit cancels changes', async ({ page }) => {
+  test('TC-N-005 Escape during edit cancels changes', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     const row = todoByText(page, 'Buy milk');
 
@@ -257,7 +257,7 @@ test.describe('Negative flows', () => {
     await expect(row.locator('label')).toHaveText('Buy milk');
   });
 
-  test('TC-N-006 Destroy button is not visible without hover/focus', async ({ page }) => {
+  test('TC-N-006 Destroy button is not visible without hover/focus', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     await page.mouse.move(0, 0);
 
@@ -265,7 +265,7 @@ test.describe('Negative flows', () => {
     await expect(destroy).toBeHidden();
   });
 
-  test('TC-N-007 Counter never goes negative or shows when list is empty', async ({ page }) => {
+  test('TC-N-007 Counter never goes negative or shows when list is empty', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Solo task');
     const row = todoByText(page, 'Solo task');
     await row.locator('.toggle').check();
@@ -275,7 +275,7 @@ test.describe('Negative flows', () => {
     await expect(page.locator('.todo-count')).toHaveCount(0);
   });
 
-  test('TC-N-008 Clear completed is not rendered when no items are completed', async ({
+  test('TC-N-008 Clear completed is not rendered when no items are completed', { tag: '@regression' }, async ({
     page,
   }) => {
     await addTodos(page, ITEMS_4);
@@ -287,7 +287,7 @@ test.describe('Negative flows', () => {
 /* Edge cases                                                          */
 /* ------------------------------------------------------------------ */
 test.describe('Edge cases', () => {
-  test('TC-E-001 Special characters and emojis are accepted verbatim', async ({ page }) => {
+  test('TC-E-001 Special characters and emojis are accepted verbatim', { tag: '@regression' }, async ({ page }) => {
     const items = [
       '<script>alert(1)</script>',
       `O'Brien & "Co."`,
@@ -309,7 +309,7 @@ test.describe('Edge cases', () => {
     await expect(page.locator('.todo-list script')).toHaveCount(0);
   });
 
-  test('TC-E-002 Duplicate titles are allowed and treated as distinct items', async ({ page }) => {
+  test('TC-E-002 Duplicate titles are allowed and treated as distinct items', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     await addTodo(page, 'Buy milk');
 
@@ -323,7 +323,7 @@ test.describe('Edge cases', () => {
     await expect(page.locator('.todo-count')).toHaveText('1 item left');
   });
 
-  test('TC-E-003 Long title (500 characters) is accepted and rendered', async ({ page }) => {
+  test('TC-E-003 Long title (500 characters) is accepted and rendered', { tag: '@regression' }, async ({ page }) => {
     const longText = 'a'.repeat(500);
     await addTodo(page, longText);
 
@@ -331,7 +331,7 @@ test.describe('Edge cases', () => {
     await expect(page.locator('.todo-list li label')).toHaveText(longText);
   });
 
-  test('TC-E-004 Singular/plural in counter', async ({ page }) => {
+  test('TC-E-004 Singular/plural in counter', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'One');
     await expect(page.locator('.todo-count')).toHaveText('1 item left');
 
@@ -339,7 +339,7 @@ test.describe('Edge cases', () => {
     await expect(page.locator('.todo-count')).toHaveText('2 items left');
   });
 
-  test('TC-E-005 Filter selection persists during adds within the same session', async ({
+  test('TC-E-005 Filter selection persists during adds within the same session', { tag: '@regression' }, async ({
     page,
   }) => {
     await addTodos(page, ['Active 1', 'Active 2']);
@@ -360,7 +360,7 @@ test.describe('Edge cases', () => {
     ]);
   });
 
-  test('TC-E-006 Reload preserves selected filter via URL hash', async ({ page }) => {
+  test('TC-E-006 Reload preserves selected filter via URL hash', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Task A');
     await todoByText(page, 'Task A').locator('.toggle').check();
 
@@ -374,7 +374,7 @@ test.describe('Edge cases', () => {
     await expect(page.locator('.todo-list li label')).toHaveText(['Task A']);
   });
 
-  test('TC-E-007 Toggle-all chevron reflects mixed state correctly', async ({ page }) => {
+  test('TC-E-007 Toggle-all chevron reflects mixed state correctly', { tag: '@regression' }, async ({ page }) => {
     await addTodos(page, ITEMS_4);
     await todoByText(page, 'Buy milk').locator('.toggle').check();
     await todoByText(page, 'Walk the dog').locator('.toggle').check();
@@ -395,7 +395,7 @@ test.describe('Edge cases', () => {
     await expect(toggleAll).not.toBeChecked();
   });
 
-  test('TC-E-008 Editing trims whitespace; pure-whitespace edit deletes item', async ({ page }) => {
+  test('TC-E-008 Editing trims whitespace; pure-whitespace edit deletes item', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     const row = todoByText(page, 'Buy milk');
 
@@ -412,7 +412,7 @@ test.describe('Edge cases', () => {
     await expect(todoItems(page)).toHaveCount(0);
   });
 
-  test('TC-E-009 Blur commits edit (same semantics as Enter)', async ({ page }) => {
+  test('TC-E-009 Blur commits edit (same semantics as Enter)', { tag: '@regression' }, async ({ page }) => {
     await addTodo(page, 'Buy milk');
     const row = todoItems(page).first();
 

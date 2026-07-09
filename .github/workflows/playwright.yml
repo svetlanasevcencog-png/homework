@@ -66,6 +66,15 @@ jobs:
         echo "suite=${SUITE}" >> "$GITHUB_OUTPUT"
         echo "grep=@${SUITE}" >> "$GITHUB_OUTPUT"
         echo "Resolved suite: ${SUITE} (event=${{ github.event_name }})"
+    # Auth setup has no suite tag; run it unfiltered, then the tagged suite
+    # with --no-deps so --grep cannot skip authenticate-as-admin.
+    - name: Run Playwright auth setup
+      env:
+        DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+        DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+        DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+        DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+      run: npx playwright test --project=setup
     - name: Run Playwright tests (${{ steps.suite.outputs.suite }})
       env:
         DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
@@ -75,9 +84,9 @@ jobs:
       run: >
         npx playwright test
         --grep "${{ steps.suite.outputs.grep }}"
-        --project=setup
         --project=chromium-didaxis
         --project=chromium-guest
+        --no-deps
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

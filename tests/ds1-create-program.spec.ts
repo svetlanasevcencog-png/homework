@@ -14,7 +14,7 @@ test.describe('DS-1 Create new academic program', () => {
   // Auth state comes from tests/auth.setup.ts via playwright.config storageState.
 
   test.describe('Positive flows', () => {
-    test('TC-001 Admin can open the program creation form from the Programs page', async ({
+    test('TC-001 Admin can open the program creation form from the Programs page', { tag: '@smoke' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -28,7 +28,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-001b New Program modal hides AI config fields until expanded', async ({
+    test('TC-001b New Program modal hides AI config fields until expanded', { tag: '@sanity' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -43,7 +43,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeVisible();
     });
 
-    test('TC-001c Expanding AI Generation Config reveals scheduling and audience fields', async ({
+    test('TC-001c Expanding AI Generation Config reveals scheduling and audience fields', { tag: '@sanity' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -61,7 +61,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.syncAsyncRatioLabel).toBeVisible();
     });
 
-    test('TC-002 Opening the form reveals an interactive Program Name field', async ({
+    test('TC-002 Opening the form reveals an interactive Program Name field', { tag: '@sanity' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -73,7 +73,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(nameField).toBeFocused();
     });
 
-    test('TC-003 Admin can create a program with both Name and Description', async ({
+    test('TC-003 Admin can create a program with both Name and Description', { tag: '@smoke' }, async ({
       page,
       request,
       trackProgram,
@@ -92,7 +92,7 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-004 Newly created program persists across reload', async ({
+    test('TC-004 Newly created program persists across reload', { tag: '@sanity' }, async ({
       page,
       request,
       trackProgram,
@@ -112,7 +112,7 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-005 Create button becomes enabled as soon as Program Name has content', async ({
+    test('TC-005 Create button becomes enabled as soon as Program Name has content', { tag: '@sanity' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -123,7 +123,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeEnabled();
     });
 
-    test('TC-005b New-program button is keyboard operable', async ({ page }) => {
+    test('TC-005b New-program button is keyboard operable', { tag: '@sanity' }, async ({ page }) => {
       const programs = await openProgramsList(page);
 
       await programs.newProgramButton.focus();
@@ -132,7 +132,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(programs.newProgramModal.dialog).toBeVisible();
     });
 
-    test('TC-006 Description is optional', async ({ page, request, trackProgram }) => {
+    test('TC-006 Description is optional', { tag: '@smoke' }, async ({ page, request, trackProgram }) => {
       const name = uniqueName('Data Science');
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
@@ -147,7 +147,7 @@ test.describe('DS-1 Create new academic program', () => {
   });
 
   test.describe('Negative flows', () => {
-    test('TC-N-001 Create button is disabled when Program Name is empty', async ({
+    test('TC-N-001 Create button is disabled when Program Name is empty', { tag: '@regression' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -159,7 +159,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-N-002 Whitespace-only Program Name does not enable Create', async ({
+    test('TC-N-002 Whitespace-only Program Name does not enable Create', { tag: '@regression' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -171,7 +171,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-N-003 Closing the modal discards the entry', async ({ page }) => {
+    test('TC-N-003 Closing the modal discards the entry', { tag: '@regression' }, async ({ page }) => {
       const name = uniqueName('Throwaway');
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
@@ -187,7 +187,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(reloaded.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-N-004 Re-opening the form after dismiss retains the previously entered values', async ({
+    test('TC-N-004 Re-opening the form after dismiss retains the previously entered values', { tag: '@regression' }, async ({
       page,
     }) => {
       const draftName = uniqueName('Draft');
@@ -207,7 +207,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeEnabled();
     });
 
-    test('TC-N-005 Cancel dismisses New Program modal without saving', async ({ page }) => {
+    test('TC-N-005 Cancel dismisses New Program modal without saving', { tag: '@regression' }, async ({ page }) => {
       const name = uniqueName('Cancelled Draft');
       const programs = await openNewProgramForm(page);
       const modal = programs.newProgramModal;
@@ -219,7 +219,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(programs.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-N-006 Invalid Total Program Hours closes modal without creating or explaining (DS-115)', async ({
+    test('TC-N-006 Invalid Total Program Hours closes modal without creating or explaining (DS-115)', { tag: '@regression' }, async ({
       page,
     }) => {
       const name = uniqueName('Hours Alpha');
@@ -234,7 +234,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(programs.programInList(name)).toHaveCount(0);
     });
 
-    test('TC-N-007 Negative Total Program Hours is rejected silently on submit (DS-115)', async ({
+    test('TC-N-007 Negative Total Program Hours is rejected silently on submit (DS-115)', { tag: '@regression' }, async ({
       page,
     }) => {
       const name = uniqueName('Hours Beta');
@@ -251,7 +251,7 @@ test.describe('DS-1 Create new academic program', () => {
   });
 
   test.describe('Edge cases', () => {
-    test('TC-E-008 Hiding AI Generation Config collapses the extended fields', async ({
+    test('TC-E-008 Hiding AI Generation Config collapses the extended fields', { tag: '@regression' }, async ({
       page,
     }) => {
       const programs = await openNewProgramForm(page);
@@ -265,7 +265,7 @@ test.describe('DS-1 Create new academic program', () => {
       await expect(modal.createButton).toBeDisabled();
     });
 
-    test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', async ({
+    test('TC-E-001 Leading/trailing whitespace in Program Name is trimmed', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -283,7 +283,7 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, trimmed);
     });
 
-    test('TC-E-002 255-character Program Name is accepted', async ({
+    test('TC-E-002 255-character Program Name is accepted', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -301,7 +301,7 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-E-004 Long Description (2000 characters) is accepted', async ({
+    test('TC-E-004 Long Description (2000 characters) is accepted', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -317,7 +317,7 @@ test.describe('DS-1 Create new academic program', () => {
       await trackProgramByName(request, trackProgram, name);
     });
 
-    test('TC-E-006 Special characters, emojis, and non-Latin scripts are accepted verbatim', async ({
+    test('TC-E-006 Special characters, emojis, and non-Latin scripts are accepted verbatim', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
@@ -348,7 +348,7 @@ test.describe('DS-1 Create new academic program', () => {
       expect(dialogTriggered).toBe(false);
     });
 
-    test('TC-E-007 Short Program Name (single-letter prefix) is accepted', async ({
+    test('TC-E-007 Short Program Name (single-letter prefix) is accepted', { tag: '@regression' }, async ({
       page,
       request,
       trackProgram,
