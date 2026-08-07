@@ -1,6 +1,6 @@
 # QA Harness Architecture
 
-Overview of the Didaxis QA harness: agent coordination, Playwright test stack, CI, and guardrails.
+Overview of the QA harness for the project under test: agent coordination, Playwright test stack, CI, and guardrails.
 
 ## System overview
 
@@ -34,7 +34,7 @@ flowchart TB
     POM["pom-conventions"]
     API["api-cleanup"]
     SRE["suite-reliability-eval"]
-    DEL["didaxis-program-deleter"]
+    DEL["program-deleter"]
   end
 
   subgraph Guardrails["Guardrails"]
@@ -61,7 +61,7 @@ flowchart TB
   subgraph External["External systems"]
     JIRA["Jira DS project"]
     GH["GitHub runs · PRs"]
-    APP["Didaxis app\ndev1 env"]
+    APP["project under test\ndev1 env"]
     PWMCP["Playwright MCP\na11y tree"]
     ATL["Atlassian MCP\nlocal Jira"]
   end
@@ -184,7 +184,7 @@ flowchart TB
 
   subgraph Projects["Playwright projects"]
     SETUP["setup"]
-    AUTH["chromium-didaxis\n(storageState)"]
+    AUTH["authenticated project\n(project under test / storageState)"]
     GUEST["chromium-guest"]
   end
 

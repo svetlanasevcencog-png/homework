@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CGI — Agent-Driven QA Harness Techniques</title>
+<style>
+  :root {
+    --cgi-red: #E31937;
+    --cgi-red-dark: #8B1528;
+    --white: #ffffff;
+    --off-white: #f7f7f7;
+    --card: #f0f0f0;
+    --charcoal: #1a1a1a;
+    --dark: #2d2d2d;
+    --muted: #5c5c5c;
+    --line: #d9d9d9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #e8e8e8; color: var(--charcoal); font-family: Arial, Helvetica, "Segoe UI", sans-serif; }
+  .deck { height: 100%; overflow: hidden; position: relative; }
+  .slide {
+    display: none; height: 100%; padding: 36px 52px 68px;
+    background: var(--white); flex-direction: column; position: relative;
+  }
+  .slide.active { display: flex; }
+  .slide::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--cgi-red);
+  }
+  h1 { font-size: 2.15rem; font-weight: 700; color: var(--charcoal); margin-bottom: 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 1rem; color: var(--muted); font-weight: 400; margin-bottom: 12px; }
+  .accent { width: 72px; height: 4px; background: var(--cgi-red); margin-bottom: 16px; }
+  .kicker { color: var(--muted); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 10px; }
+  .brand { color: var(--cgi-red); font-size: 1.35rem; font-weight: 800; letter-spacing: 0.04em; margin-bottom: 18px; }
+  .tagline { color: var(--cgi-red); font-size: 1rem; font-weight: 700; margin-top: 18px; }
+  .subtitle { color: var(--muted); font-size: 1.1rem; line-height: 1.5; max-width: 42rem; }
+  .grid { display: grid; gap: 12px; flex: 1; min-height: 0; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: var(--card); border-radius: 6px; padding: 16px 18px 16px 22px;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--cgi-red);
+  }
+  .card h3 { color: var(--cgi-red); font-size: 0.85rem; margin-bottom: 8px; letter-spacing: 0.04em; }
+  .card ul { list-style: none; }
+  .card li { color: var(--dark); font-size: 0.88rem; line-height: 1.35; padding: 3px 0 3px 14px; position: relative; }
+  .card li::before { content: "•"; position: absolute; left: 0; color: var(--cgi-red); font-weight: 700; }
+  .pill-row { display: flex; flex-direction: column; gap: 8px; }
+  .pill-row .row { display: flex; align-items: center; gap: 14px; }
+  .pill {
+    min-width: 140px; text-align: center; padding: 9px 12px;
+    border-radius: 4px; background: var(--cgi-red); color: white; font-weight: 700; font-size: 0.82rem;
+  }
+  .pill.alt { background: var(--charcoal); }
+  .pill-row .desc { color: var(--dark); font-size: 0.92rem; }
+  .num {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--cgi-red); color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; margin-right: 12px; flex-shrink: 0; font-size: 0.85rem;
+  }
+  .agenda-item {
+    display: flex; align-items: center; background: var(--card); border-radius: 6px; padding: 14px 16px;
+  }
+  .agenda-item .num { border-radius: 4px; width: 44px; }
+  .agenda-item span:last-child { font-size: 1rem; font-weight: 600; }
+  .stack-layer {
+    background: var(--card); border-radius: 4px; padding: 9px 14px;
+    display: flex; gap: 16px; align-items: center; margin-bottom: 6px;
+  }
+  .stack-layer.top { background: var(--cgi-red); color: white; }
+  .stack-layer.top span { color: #ffe0e5; }
+  .stack-layer strong { min-width: 200px; font-family: Consolas, "Courier New", monospace; font-size: 0.82rem; }
+  .stack-layer span { color: var(--muted); font-size: 0.88rem; }
+  .badge {
+    display: inline-block; padding: 5px 12px; border-radius: 4px;
+    font-weight: 700; font-size: 0.75rem; margin-bottom: 8px; color: white;
+  }
+  .badge.must { background: var(--cgi-red); }
+  .badge.should { background: var(--charcoal); }
+  .badge.wont { background: var(--cgi-red-dark); }
+  table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+  th { text-align: left; color: var(--cgi-red); font-size: 0.78rem; padding: 0 12px 4px; letter-spacing: 0.04em; }
+  td { background: var(--card); padding: 10px 12px; font-size: 0.88rem; color: var(--charcoal); }
+  td:first-child { border-radius: 4px 0 0 4px; }
+  td:last-child { border-radius: 0 4px 4px 0; }
+  .takeaway { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+  .takeaway p { color: var(--dark); font-size: 0.95rem; line-height: 1.35; padding-top: 6px; }
+  .footer {
+    position: absolute; bottom: 48px; left: 52px; right: 52px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--line); padding-top: 8px; font-size: 0.75rem; color: var(--muted);
+  }
+  .footer .cgi { color: var(--cgi-red); font-weight: 800; letter-spacing: 0.04em; }
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 22px; background: var(--white); border-top: 1px solid var(--line); z-index: 10;
+  }
+  .nav button {
+    background: var(--cgi-red); color: white; border: none; border-radius: 4px;
+    padding: 8px 14px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .nav button:disabled { opacity: 0.3; cursor: default; }
+  .nav .progress { color: var(--muted); font-size: 0.85rem; }
+  .title-slide { justify-content: center; padding-left: 72px; }
+  .title-slide::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background: var(--cgi-red);
+  }
+  .title-slide h1 { font-size: 3rem; margin: 6px 0 16px; }
+  .footnote { margin-top: 22px; color: var(--muted); font-size: 0.9rem; }
+  .center-card { text-align: center; padding-left: 20px; }
+  .center-card::before { display: none; }
+  .center-card .big { font-size: 1rem; margin: 10px 0 6px; color: var(--charcoal); font-weight: 700; }
+  .agent-head {
+    background: var(--cgi-red); color: white; margin: -16px -18px 12px -22px;
+    padding: 10px; text-align: center; font-weight: 700; font-size: 0.95rem;
+  }
+  .topbar { height: 5px; margin: -16px -18px 12px -22px; }
+  .skill-card h3 { color: var(--charcoal); font-size: 0.82rem; }
+  .skill-card p { color: var(--muted); font-size: 0.8rem; }
+  .seq {
+    display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%;
+  }
+  .seq .step {
+    flex: 1; background: var(--card); border-top: 4px solid var(--cgi-red); border-radius: 0 0 6px 6px;
+    padding: 10px 6px; text-align: center; min-width: 0;
+  }
+  .seq .step .n { color: var(--cgi-red); font-weight: 800; font-size: 0.8rem; margin-bottom: 3px; }
+  .seq .step .t { font-weight: 700; font-size: 0.78rem; margin-bottom: 2px; }
+  .seq .step .d { font-size: 0.65rem; color: var(--muted); line-height: 1.25; }
+  .seq .arr { color: var(--cgi-red); font-weight: 700; font-size: 1.1rem; flex: 0 0 14px; text-align: center; }
+  .mermaid-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto;
+    background: var(--off-white); border-radius: 8px; border: 1px solid var(--line); padding: 8px;
+    min-height: 0;
+  }
+  .mermaid { width: 100%; }
+  .mermaid svg { max-height: 360px !important; }
+  .two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+  .compact-skills { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+</style>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "base",
+    themeVariables: {
+      primaryColor: "#E31937",
+      primaryTextColor: "#ffffff",
+      primaryBorderColor: "#E31937",
+      secondaryColor: "#f0f0f0",
+      tertiaryColor: "#fff5f6",
+      lineColor: "#E31937",
+      textColor: "#1a1a1a",
+      mainBkg: "#E31937",
+      nodeBorder: "#E31937",
+      clusterBkg: "#f7f7f7",
+      clusterBorder: "#d9d9d9",
+      titleColor: "#1a1a1a",
+      edgeLabelBackground: "#ffffff",
+      actorBkg: "#E31937",
+      actorTextColor: "#ffffff",
+      actorBorder: "#E31937",
+      signalColor: "#1a1a1a",
+      signalTextColor: "#1a1a1a",
+      labelBoxBkgColor: "#f0f0f0",
+      labelTextColor: "#1a1a1a",
+      noteBkgColor: "#fff5f6",
+      noteTextColor: "#1a1a1a",
+      activationBkgColor: "#fbe8eb",
+      sequenceNumberColor: "#ffffff"
+    },
+    flowchart: { curve: "basis", padding: 10, htmlLabels: true },
+    sequence: { mirrorActors: false, messageMargin: 24 }
+  });
+  window.__renderMermaid = async () => {
+    const nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+    for (const el of nodes) {
+      const id = "mmd-" + Math.random().toString(36).slice(2);
+      const { svg } = await mermaid.render(id, el.textContent);
+      el.innerHTML = svg;
+      el.setAttribute("data-processed", "true");
+    }
+  };
+  document.addEventListener("DOMContentLoaded", () => window.__renderMermaid());
+</script>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- 1 Title -->
+  <section class="slide title-slide active">
+    <div class="brand">CGI</div>
+    <div class="kicker">TECHNIQUES OVERVIEW</div>
+    <h1>Agent-Driven QA Harness</h1>
+    <p class="subtitle">Cursor agents · Playwright conventions · CI guardrails<br/>How the harness turns tickets into reliable automated tests</p>
+    <p class="tagline">Insights you can act on</p>
+    <p class="footnote">Focus: engineering techniques — not the product under test</p>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>1 / 10</span></div>
+  </section>
+
+  <!-- 2 Agenda -->
+  <section class="slide">
+    <h1>Agenda</h1>
+    <h2>What we will cover</h2>
+    <div class="accent"></div>
+    <div class="grid grid-2">
+      <div class="agenda-item"><span class="num">01</span><span>Problem &amp; approach</span></div>
+      <div class="agenda-item"><span class="num">02</span><span>Architecture</span></div>
+      <div class="agenda-item"><span class="num">03</span><span>Agents &amp; entry points</span></div>
+      <div class="agenda-item"><span class="num">04</span><span>Test stack &amp; skills</span></div>
+      <div class="agenda-item"><span class="num">05</span><span>Conventions &amp; guardrails</span></div>
+      <div class="agenda-item"><span class="num">06</span><span>Happy path</span></div>
+      <div class="agenda-item"><span class="num">07</span><span>Heal on red &amp; CI</span></div>
+      <div class="agenda-item"><span class="num">08</span><span>Key takeaways</span></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>2 / 10</span></div>
+  </section>
+
+  <!-- 3 Problem -->
+  <section class="slide">
+    <h1>Problem &amp; approach</h1>
+    <h2>Why a harness — not just a test suite</h2>
+    <div class="accent"></div>
+    <div class="grid grid-2">
+      <div class="card"><h3>THE CHALLENGE</h3><ul>
+        <li>Ticket → tests is slow and inconsistent</li>
+        <li>UI drift breaks locators silently</li>
+        <li>Agents can invent paths or weaken asserts</li>
+        <li>Flakes and leftover data erode trust</li>
+        <li>Humans must stay in the loop for risk</li>
+      </ul></div>
+      <div class="card"><h3>THE APPROACH</h3><ul>
+        <li>Coordinator delegates to specialist agents</li>
+        <li>Skills encode repeatable procedures</li>
+        <li>Constitution: MUST / SHOULD / WON'T</li>
+        <li>Hooks block weakened assertions</li>
+        <li>Human gates on plan review &amp; merge</li>
+        <li>Reliability eval before declaring Done</li>
+      </ul></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>3 / 10</span></div>
+  </section>
+
+  <!-- 4 Architecture -->
+  <section class="slide">
+    <h1>Architecture</h1>
+    <h2>From trigger to external systems</h2>
+    <div class="accent"></div>
+    <div class="two-col">
+      <div class="pill-row">
+        <div class="row"><div class="pill">Triggers</div><div class="desc">Jira · gaps · red CI · cron</div></div>
+        <div class="row"><div class="pill alt">Coordinator</div><div class="desc">QA Orchestrator (+ headless CI)</div></div>
+        <div class="row"><div class="pill">Agents</div><div class="desc">test-writer · triage · bug-reporter</div></div>
+        <div class="row"><div class="pill alt">Skills</div><div class="desc">Analyzer, explore, heal, eval…</div></div>
+        <div class="row"><div class="pill">Stack</div><div class="desc">Features → specs → pages → fixtures</div></div>
+        <div class="row"><div class="pill alt">Guardrails</div><div class="desc">Constitution · hooks · humans</div></div>
+        <div class="row"><div class="pill">CI / external</div><div class="desc">GitHub · Jira · app · MCPs</div></div>
+      </div>
+      <div class="mermaid-wrap">
+        <pre class="mermaid">
+flowchart TB
+  T1["Jira ticket"] & T2["Gap"] & T3["Red CI"] --> ORCH["QA Orchestrator"]
+  ORCH --> TW["test-writer"] & TR["triage"]
+  TW --> SPEC["specs + pages"]
+  TW --> GH["GitHub PR"]
+  TR -->|drift| SH["self-heal"]
+  TR -->|app bug| BR["bug-reporter"]
+  BR --> JIRA["Jira"]
+  SH --> SPEC
+        </pre>
+      </div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>4 / 10</span></div>
+  </section>
+
+  <!-- 5 Agents + entry points -->
+  <section class="slide">
+    <h1>Agents &amp; entry points</h1>
+    <h2>Narrow roles — coordinator never does everything alone</h2>
+    <div class="accent"></div>
+    <div class="grid grid-4" style="flex:0; margin-bottom:12px">
+      <div class="card center-card"><div class="num" style="margin:0 auto">1</div><div class="big">Jira ticket</div><p style="color:var(--muted);font-size:0.78rem">DS-* AC → Gherkin plan</p></div>
+      <div class="card center-card"><div class="num" style="margin:0 auto">2</div><div class="big">Coverage gap</div><p style="color:var(--muted);font-size:0.78rem">Live UI vs specs</p></div>
+      <div class="card center-card"><div class="num" style="margin:0 auto">3</div><div class="big">Red CI run</div><p style="color:var(--muted);font-size:0.78rem">triage → heal or bug</p></div>
+      <div class="card center-card"><div class="num" style="margin:0 auto">4</div><div class="big">Daily cron</div><p style="color:var(--muted);font-size:0.78rem">Headless backlog</p></div>
+    </div>
+    <div class="grid grid-3">
+      <div class="card" style="padding-left:20px"><div class="agent-head">test-writer</div><ul>
+        <li>Plan → Playwright specs + POMs</li>
+        <li>pom-conventions &amp; api-cleanup</li>
+        <li>Opens feat/* PR</li>
+      </ul></div>
+      <div class="card" style="padding-left:20px"><div class="agent-head">triage</div><ul>
+        <li>Read-only on red runs</li>
+        <li>Classifies app bug vs drift</li>
+        <li>Never patches code</li>
+      </ul></div>
+      <div class="card" style="padding-left:20px"><div class="agent-head">bug-reporter</div><ul>
+        <li>Files / links Jira bugs</li>
+        <li>Only after real bug</li>
+        <li>Never self-heals</li>
+      </ul></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>5 / 10</span></div>
+  </section>
+
+  <!-- 6 Stack + skills -->
+  <section class="slide">
+    <h1>Test stack &amp; skills</h1>
+    <h2>Strict layering + reusable procedures</h2>
+    <div class="accent"></div>
+    <div class="stack-layer top"><strong>features/*.feature.md</strong><span>Gherkin plans — human-reviewed</span></div>
+    <div class="stack-layer"><strong>tests/ds*.spec.ts</strong><span>Intent + expect() — no inline locators</span></div>
+    <div class="stack-layer"><strong>pages/*.page.ts</strong><span>getByRole locators + actions — no assertions</span></div>
+    <div class="stack-layer"><strong>helpers · fixtures · auth</strong><span>Shared flows · trackProgram · storageState</span></div>
+    <div class="compact-skills">
+      <div class="card skill-card"><h3>jira-ticket-analyzer</h3><p>AC → Gherkin plans</p></div>
+      <div class="card skill-card"><h3>explore-and-generate</h3><p>Coverage gaps</p></div>
+      <div class="card skill-card"><h3>ci-failure-triage</h3><p>Logs → diagnosis</p></div>
+      <div class="card skill-card"><h3>self-heal</h3><p>POM drift only</p></div>
+      <div class="card skill-card"><h3>jira-bug-reporter</h3><p>Structured bugs</p></div>
+      <div class="card skill-card"><h3>suite-reliability-eval</h3><p>eval-report.md</p></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>6 / 10</span></div>
+  </section>
+
+  <!-- 7 Conventions + guardrails -->
+  <section class="slide">
+    <h1>Conventions &amp; guardrails</h1>
+    <h2>Machines enforce; humans decide risk</h2>
+    <div class="accent"></div>
+    <div class="grid grid-3" style="flex:0; margin-bottom:12px">
+      <div class="card"><span class="badge must">MUST</span><ul>
+        <li>Role-based locators</li>
+        <li>Web-first assertions</li>
+        <li>storageState via setup</li>
+        <li>Self-cleaning data</li>
+        <li>One tag per test()</li>
+      </ul></div>
+      <div class="card"><span class="badge should">SHOULD</span><ul>
+        <li>Faker factories</li>
+        <li>Enums for UI strings</li>
+        <li>JSDoc on POM actions</li>
+      </ul></div>
+      <div class="card"><span class="badge wont">WON'T</span><ul>
+        <li>CSS / XPath as default</li>
+        <li>waitForTimeout</li>
+        <li>Weaken assertions</li>
+        <li>Heal a real app bug</li>
+      </ul></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card"><h3>ENFORCED</h3><ul>
+        <li>Constitution always on</li>
+        <li>Hook blocks weakened expect()</li>
+        <li>≤5 delegations · ≤5 heals/run</li>
+        <li>Generation gate + main test check</li>
+      </ul></div>
+      <div class="card"><h3>HUMAN GATES</h3><ul>
+        <li>Review Gherkin plan before coding</li>
+        <li>Confidence &lt;5: ask · 5–7: approve</li>
+        <li>PR merge never automated</li>
+        <li>Never invent path / enum / credential</li>
+      </ul></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>7 / 10</span></div>
+  </section>
+
+  <!-- 8 Happy path -->
+  <section class="slide">
+    <h1>Happy path: ticket → green</h1>
+    <h2>One ticket = one PR; humans approve the plan</h2>
+    <div class="accent"></div>
+    <div class="seq">
+      <div class="step"><div class="n">1</div><div class="t">Trigger</div><div class="d">DS ticket</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">2</div><div class="t">Analyze</div><div class="d">analyzer</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">3</div><div class="t">Plan</div><div class="d">feature.md</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">4</div><div class="t">Review</div><div class="d">Human STOP</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">5</div><div class="t">Write</div><div class="d">test-writer</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">6</div><div class="t">Run</div><div class="d">Playwright</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">7</div><div class="t">PR</div><div class="d">CI gate</div></div>
+      <div class="arr">→</div>
+      <div class="step"><div class="n">8</div><div class="t">Eval</div><div class="d">reliability</div></div>
+    </div>
+    <div style="margin-top:20px" class="grid grid-2">
+      <div class="card"><h3>HUMAN IN THE LOOP</h3><ul>
+        <li>Plan review before any specs are written</li>
+        <li>PR merge never automated par les agents</li>
+        <li>Confidence gate on uncertain edits</li>
+      </ul></div>
+      <div class="card"><h3>QUALITY GATES</h3><ul>
+        <li>CI job <code>test</code> green after PR open</li>
+        <li>eval-report.md refreshed before Done</li>
+        <li>Empty/red checks → stop</li>
+      </ul></div>
+    </div>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>8 / 10</span></div>
+  </section>
+
+  <!-- 9 Heal + CI -->
+  <section class="slide">
+    <h1>Heal on red &amp; CI</h1>
+    <h2>Classify first — right signal at the right gate</h2>
+    <div class="accent"></div>
+    <div class="grid grid-3" style="flex:0; margin-bottom:12px">
+      <div class="card" style="padding-left:20px"><div class="topbar" style="background:var(--cgi-red)"></div><h3 style="color:var(--cgi-red)">Real app bug</h3><ul>
+        <li>bug-reporter → Jira</li>
+        <li>Never self-heal</li>
+      </ul></div>
+      <div class="card" style="padding-left:20px"><div class="topbar" style="background:var(--charcoal)"></div><h3 style="color:var(--charcoal)">Locator drift</h3><ul>
+        <li>self-heal → patch pages/ only</li>
+        <li>Assertions unchanged · ≤5 heals</li>
+      </ul></div>
+      <div class="card" style="padding-left:20px"><div class="topbar" style="background:var(--cgi-red-dark)"></div><h3 style="color:var(--cgi-red-dark)">Inconclusive</h3><ul>
+        <li>Stop &amp; escalate</li>
+        <li>No silent guess</li>
+      </ul></div>
+    </div>
+    <table>
+      <thead><tr><th>Trigger</th><th>Suite / job</th><th>Intent</th></tr></thead>
+      <tbody>
+        <tr><td>Pull request → main</td><td>@smoke</td><td>Fast confidence on every PR</td></tr>
+        <tr><td>Push → main</td><td>@sanity</td><td>Broader post-merge check</td></tr>
+        <tr><td>Manual dispatch</td><td>@regression</td><td>Full suite on demand</td></tr>
+        <tr><td>Daily cron</td><td>QA orchestrator</td><td>Backlog via cursor-agent</td></tr>
+      </tbody>
+    </table>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>9 / 10</span></div>
+  </section>
+
+  <!-- 10 Takeaways + close -->
+  <section class="slide">
+    <h1>Key takeaways</h1>
+    <h2>Techniques you can reuse</h2>
+    <div class="accent"></div>
+    <div class="takeaway"><span class="num">1</span><p>Separate coordination from specialist work — orchestrator delegates, agents stay narrow.</p></div>
+    <div class="takeaway"><span class="num">2</span><p>Encode process as skills; encode safety as constitution + hooks, not hope.</p></div>
+    <div class="takeaway"><span class="num">3</span><p>Layer tests: plans → assertions → locators → data.</p></div>
+    <div class="takeaway"><span class="num">4</span><p>Classify before healing — drift → POM; product bugs → Jira.</p></div>
+    <div class="takeaway"><span class="num">5</span><p>Humans own plan approval and merge; agents own speed inside those rails.</p></div>
+    <p class="tagline" style="margin-top:14px">Questions?</p>
+    <p class="footnote">docs/harness-diagram.md · .cursor/rules/ · .cursor/skills/</p>
+    <div class="footer"><span class="cgi">CGI</span><span>QA Harness — Techniques Overview</span><span>10 / 10</span></div>
+  </section>
+
+</div>
+
+<nav class="nav">
+  <button id="prev" type="button">← Prev</button>
+  <div class="progress"><span id="cur">1</span> / <span id="total">10</span> · ← → keys</div>
+  <button id="next" type="button">Next →</button>
+</nav>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const curEl = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  let i = 0;
+  totalEl.textContent = slides.length;
+  async function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    curEl.textContent = i + 1;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === slides.length - 1;
+    if (window.__renderMermaid) await window.__renderMermaid();
+  }
+  prevBtn.onclick = () => show(i - 1);
+  nextBtn.onclick = () => show(i + 1);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  show(0);
+</script>
+</body>
+</html>
