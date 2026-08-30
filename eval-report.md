@@ -1,8 +1,9 @@
 # Suite reliability eval report
 
-**As of:** 2026-07-09  
+**As of:** 2026-08-30  
 **Scope:** Didaxis Playwright suite + QA harness (agents/skills/CI)  
-**Note:** Cursor has no built-in telemetry for flake, heal, generation-gate, or ask-vs-guess. Every number below was measured manually from CI logs, PR history, and agent session transcripts.
+**Backlog run outcome:** **STOPPED** — Jira REST Basic auth failed (`x-seraph-loginreason: AUTHENTICATED_FAILED`; `GET /rest/api/3/myself` → **401**). Search returned `issues: []` while unauthenticated; that is **not** treated as an empty queue. No ticket specs, labels, or Jira bugs were changed.  
+**Note:** Cursor has no built-in telemetry for flake, heal, generation-gate, or ask-vs-guess. Numbers below were measured from CI artifacts, PR history, and the transcripts available in this environment.
 
 ---
 
@@ -10,11 +11,11 @@
 
 | | |
 |---|---|
-| **Number** | **0%** — `0` flaky / `1732` concluded tests (`passed` + `failed` + `flaky`) across the **last 20** completed `playwright.yml` runs |
-| **How measured** | `gh run list --workflow=playwright.yml` → `gh run view <id> --log` for each of the last 20 completed runs; parsed Playwright summary lines (`N passed` / `N failed` / `N flaky`). Config uses `retries: 2` on CI (`playwright.config.ts`), so a pass-only-on-retry would appear as `flaky` in the summary. Going forward, CI also uploads `playwright-junit-<suite>` (`junit-results.xml`) for the same scrape without log greps. |
-| **What it tells us** | In this window the suite is not papering over failures with retries — green means first-attempt green (or no tests ran). |
+| **Number** | **0%** — `0` flaky / `40` concluded tests (`passed` + `failed` + `flaky`) across **2** completed `playwright.yml` runs with unexpired JUnit |
+| **How measured** | `gh run list --workflow=playwright.yml --limit 30` → download unexpired `playwright-junit-*` artifacts → parse `junit-results.xml`. Only runs [31205683508](https://github.com/svetlanasevcencog-png/homework/actions/runs/31205683508) (smoke, 18 cases) and [31205910102](https://github.com/svetlanasevcencog-png/homework/actions/runs/31205910102) (sanity, 22 cases) still had JUnit. Zero `<failure>` / `<error>` / flaky markers. Older runs’ JUnit artifacts are expired; five recent `chore/eval-report-*` PRs concluded `action_required` (no test execution). |
+| **What it tells us** | In the measurable window the suite shows no retry-only passes — but coverage is thin (2/20+ runs) until more JUnit artifacts stay retained. |
 
-**Window detail:** 18 runs with test execution (including post-tag smoke/sanity subsets); 2 runs failed with `No tests found` after `@sanity` filtering (PR #30) — counted as zero flaky, not as flake.
+**Gap:** Full last-20 flake scrape is **n/a** for expired-artifact runs (cannot invent counts from missing XML).
 
 ---
 
@@ -23,8 +24,8 @@
 | | |
 |---|---|
 | **Number** | **100%** — `1` clean heal / `1` drift heal; **masked regressions: `0`** |
-| **How measured** | PR history (`gh pr list` / `fix/self-heal-*`): only **PR #22** ([Self-heal: restore Edit button role](https://github.com/svetlanasevcencog-png/homework/pull/22)) is a real drift heal. Diff is POM-only (`pages/programs.page.ts` `input` → `button`); **no `tests/**` files changed** (assertions untouched). Linked triage run [28054883297](https://github.com/svetlanasevcencog-png/homework/actions/runs/28054883297); PR body documents local re-run green; PR CI was green. PRs #21 / #24 / #25 are skill/docs only — excluded from the heal denominator. Masked-regression count = assertion/spec weakenings or “heal” of a real app bug; none found. |
-| **What it tells us** | The one heal stayed inside the contract (POM-only, assertions unchanged); the masked-regression budget is intact at **0**. |
+| **How measured** | `gh pr list` for `fix/self-heal-*`: only **PR #22** ([Self-heal: restore Edit button role](https://github.com/svetlanasevcencog-png/homework/pull/22)) is a real drift heal (POM-only `pages/programs.page.ts`; no `tests/**` changes). PR #24 same branch name is docs-only — excluded. No new heal PRs since prior eval. |
+| **What it tells us** | The one heal stayed inside the contract; masked-regression budget remains **0**. |
 
 ---
 
@@ -32,22 +33,15 @@
 
 | | |
 |---|---|
-| **Number** | **50%** — `1` / `2` harness-era generation PRs passed all three gates on the first PR *(baseline before the fix below)* |
-| **How measured** | Cohort = merged `qa/ds-*` PRs that ship or tighten ticket specs under the agent pipeline: **#17** (DS-3) and **#18** (DS-119). Early DS-1–DS-5 specs landed on `main` without PRs and are **out of scope** for a first-PR gate. For each PR: (1) **green** = first `pull_request` Playwright run success via `gh` / checks; (2) **conforming** = diff has no `waitForTimeout` / `page.locator` / CSS-XPath defaults, role-based POM usage; (3) **maps-to-AC** = `features/*.feature.md` in the PR and/or explicit Gherkin/AC linkage in the PR body. |
-| **What it tells us** | Half of agent generation PRs cleared the gate; the miss was missing CI, not bad locators. |
+| **Number** | **50%** — `1` / `2` harness-era generation PRs passed all three gates on the first PR |
+| **How measured** | Cohort = merged `qa/ds-*` PRs shipping/tightening ticket specs: **#17** (DS-3) and **#18** (DS-119). No new `qa/ds-*` PRs this run (Jira auth blocked queue). Green / conforming / maps-to-AC scoring unchanged from prior measurement. |
 
 | PR | Green on first PR | Conforming | Maps-to-AC | Gate |
 |----|-------------------|------------|------------|------|
-| [#17](https://github.com/svetlanasevcencog-png/homework/pull/17) DS-3 tighten | Yes (run [27855459102](https://github.com/svetlanasevcencog-png/homework/actions/runs/27855459102)) | Yes (spec-only, no banned patterns) | Yes (body cites Gherkin plan / TCs) | **Pass** |
-| [#18](https://github.com/svetlanasevcencog-png/homework/pull/18) DS-119 generate | **No** — `0` workflow runs on head SHA; `gh pr checks` reported none | Yes (`getByRole`, no `waitForTimeout` / `page.locator`) | Yes (`features/DS-119.feature.md` + DS-119 link) | **Fail** |
+| [#17](https://github.com/svetlanasevcencog-png/homework/pull/17) DS-3 tighten | Yes (run [27855459102](https://github.com/svetlanasevcencog-png/homework/actions/runs/27855459102)) | Yes | Yes | **Pass** |
+| [#18](https://github.com/svetlanasevcencog-png/homework/pull/18) DS-119 generate | **No** — `0` workflow runs on head SHA | Yes | Yes | **Fail** |
 
-### Fix applied (this change)
-
-- **Orchestrator Generation gate** — after `gh pr create`, require Playwright job `test` success; empty/red → stop, no `tests-generated` label (`.cursor/rules/qa-orchestrator.mdc`, `.github/qa-orchestrator-prompt.md`).
-- **Branch protection on `main`** — required status check context **`test`** (strict, up-to-date with base).
-- **JUnit artifact** — `playwright.yml` emits `junit-results.xml` for flake scraping.
-
-Re-measure generation-gate on the next `qa/ds-*` PR; target is **100%** with empty-check merges blocked.
+**What it tells us:** Gate miss mode remains “CI never ran” (PR #18). Orchestrator Generation gate + required `test` check on `main` mitigate merge, but backlog cannot exercise the gate until Jira auth works.
 
 ---
 
@@ -55,20 +49,20 @@ Re-measure generation-gate on the next `qa/ds-*` PR; target is **100%** with emp
 
 | | |
 |---|---|
-| **Number** | **29 asks : 1 guess** (across **38** agent sessions in this project’s transcripts) |
-| **How measured** | Session review of Cursor agent transcripts under `agent-transcripts/` (no product telemetry). Counted assistant turns that asked the user for a missing decision/value (`Want me to…?`, `Do you have…?`, `Which…?`, `Could you…?`) vs turns that invented a missing value (`I'll assume you mean…`). Deduped near-duplicate invent phrasings in the same turn. |
-| **What it tells us** | The agent usually stops for confirmation; the one invent (assuming “DS-1 and DS-2” when the user said something else) is rare but real — still a reliability footgun on ticket scope. |
+| **Number** | **This session: `0` asks : `0` guesses** (1 transcript file available). Historical multi-session corpus: **n/a** |
+| **How measured** | Scanned `/github/home/.cursor/projects/w-homework-homework/agent-transcripts/**/*.jsonl` (1 file). No invent-phrasings; queue was not claimed empty — auth failure escalated. Prior report’s `29 asks : 1 guess` / 38 sessions cannot be re-verified here (transcripts not mounted). |
+| **What it tells us** | This run refused to invent an empty backlog from an unauthenticated empty search; historical ask/guess ratio is unverifiable in this environment. |
 
 ---
 
 ## Top reliability risk
 
-~~**Generated ticket PRs can merge without a first-PR Playwright signal**~~ — **mitigated:** orchestrator Generation gate + `main` requires check `test`.
+**Jira API token / email pair is invalid** — backlog automation cannot list In Progress DS tickets (`AUTHENTICATED_FAILED`). Repeated open `chore/eval-report-*` PRs (#38–#42) show the same blocker across days.
 
-**Remaining risk:** agents that skip the orchestrator (manual `gh pr create` / direct push paths) still need humans to wait for CI; protection blocks merge to `main` without `test`, but does not stop opening a PR that never gets a run if the workflow is misconfigured.
+Secondary: generation PRs can still open without a `test` workflow run if someone bypasses the orchestrator; branch protection blocks merge only.
 
 ## Next action
 
-Keep `suite-reliability-eval` mandatory on every orchestrator Done / Backlog
-REPORT: refresh `eval-report.md` from JUnit + PR history + transcripts, and
-confirm the next `qa/ds-*` PR shows `test` → success before `tests-generated`.
+1. **Human:** rotate or fix GitHub secret `JIRA_API_TOKEN` (and confirm `JIRA_EMAIL` matches the Atlassian account that owns the token); verify with `GET /rest/api/3/myself` → 200.  
+2. Re-run Backlog orchestrator; process ≤5 In Progress tickets without `tests-generated`.  
+3. Close or supersede stale `chore/eval-report-*` PRs after merging the latest refresh.
